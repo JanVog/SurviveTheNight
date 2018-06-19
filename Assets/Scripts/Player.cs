@@ -11,13 +11,15 @@ public class Player : NetworkBehaviour
     public Transform bulletSpawn;
 
     public const int maxHealth = 100;
+    [SyncVar(hook = "OnChangeHealth")]
     public int currentHealth = maxHealth;
+    public RectTransform healthBar;
 
 
     void Update () {
         if (isLocalPlayer)
         {
-            var movex = Input.GetAxis("Horizontal") * Time.deltaTime * 3.0f;
+            var movex = Input.GetAxis("Horizontal") * Time.deltaTime * 5.0f;
             transform.Translate(movex, 0, 0);
             if (movex < 0)
             {
@@ -38,6 +40,7 @@ public class Player : NetworkBehaviour
     public override void OnStartLocalPlayer()
     {
         GetComponent<SpriteRenderer>().color = new Color(0.6f, 1, 0.6f, 1);
+        Destroy(healthBar.gameObject);
     }
 
     [Command]
@@ -52,7 +55,7 @@ public class Player : NetworkBehaviour
             bulletSpawn.rotation);
 
         // Add velocity to the bullet
-        bullet.GetComponent<Rigidbody2D>().velocity = new Vector2(dirMult, 0);
+        bullet.GetComponent<Rigidbody2D>().velocity = new Vector2(dirMult*8, 0);
 
         // Spawn the bullet on the Clients
         NetworkServer.Spawn(bullet);
@@ -63,11 +66,22 @@ public class Player : NetworkBehaviour
 
     public void TakeDamage(int amount)
     {
-        currentHealth -= amount;
-        if (currentHealth <= 0)
+        if (isServer)
         {
-            currentHealth = 0;
-            Debug.Log("Dead!");
+            currentHealth -= amount;
+            if (currentHealth <= 0)
+            {
+                currentHealth = 0;
+                Debug.Log("Dead!");
+            }
+        }
+    }
+
+    void OnChangeHealth(int health)
+    {
+        if (!isLocalPlayer)
+        {
+            healthBar.sizeDelta = new Vector2(currentHealth, healthBar.sizeDelta.y);
         }
     }
 }
