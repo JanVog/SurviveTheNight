@@ -15,6 +15,8 @@ public class Player : NetworkBehaviour
     public int currentHealth = maxHealth;
     public RectTransform healthBar;
 
+    int jumps = 0;
+
 
     void Update () {
         if (isLocalPlayer)
@@ -34,6 +36,28 @@ public class Player : NetworkBehaviour
             {
                 CmdFire();
             }
+
+            if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
+            {
+                if (jumps < 2)
+                {
+                    Jump();
+                    jumps += 1;
+                }
+            }
+        }
+    }
+
+    void Jump()
+    {
+        GetComponent<Rigidbody2D>().AddForce(new Vector2(0, 1 + 4 / (jumps+1)), ForceMode2D.Impulse);
+        Debug.Log(1 + 4 / (jumps + 1));
+    }
+
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        if(col.gameObject.tag == "Ground"){
+            jumps = 0;
         }
     }
 
