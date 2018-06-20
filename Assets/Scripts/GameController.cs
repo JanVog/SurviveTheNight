@@ -7,8 +7,7 @@ public class GameController : NetworkBehaviour
 {
     List<int>[] objGridOpen;
     List<int>[] objGridClosed;
-    [SyncVar]
-    int[] objGrid;
+    SyncListInt objGrid = new SyncListInt();
 
     public GameObject stonePrefab;
     public GameObject coalStonePrefab;
@@ -24,7 +23,10 @@ public class GameController : NetworkBehaviour
     {
         if (isServer)
         {
-            objGrid = new int[100];
+            for (int i = 0; i < 100; i++)
+            {
+                objGrid.Add(0);
+            }
             objGridOpen = new List<int>[20];
             for (int i = -10; i < 10; i++)
             {
@@ -42,16 +44,22 @@ public class GameController : NetworkBehaviour
 
     void refillWorld()
     {
-        for (int i = 0; i < 20; i++)
+        if (isServer)
         {
-            while (objGridOpen[i].Count > 5)
+            for (int i = 0; i < 20; i++)
             {
-                int resNo = Random.Range(1, 100);
-                int index = Random.Range(0, objGridOpen[i].Count - 1);
-                objGridClosed[i].Add(objGridOpen[i][index]);
-                objGridOpen[i].RemoveAt(index);
-                objGrid[50 + objGridOpen[i][index]] = resNo;
-                RpcSpawnResource(objGridOpen[i][index], resNo);
+                while (objGridOpen[i].Count > 5)
+                {
+                    int resNo = Random.Range(1, 100);
+                    int index = Random.Range(0, objGridOpen[i].Count - 1);
+                    Debug.Log(index);
+                    int objIndex = 50 + objGridOpen[i][index];
+                    objGrid[objIndex] = resNo;
+                    objGrid.Dirty(objIndex);
+                    objGridClosed[i].Add(objGridOpen[i][index]);
+                    RpcSpawnResource(objGridOpen[i][index], resNo);
+                    objGridOpen[i].RemoveAt(index);
+                }
             }
         }
     }
@@ -63,7 +71,7 @@ public class GameController : NetworkBehaviour
         GameObject prefab = getPrefab(resNo);
 
         // Create the resource on the map
-        var res = (GameObject)Instantiate(prefab, prefab.transform.position + new Vector3(posx * 1.28f, 0, 0), prefab.transform.rotation);
+        Instantiate(prefab, prefab.transform.position + new Vector3(posx * 1.28f, 0, 0), prefab.transform.rotation);
     }
 
     public GameObject getPrefab(int resNo)
@@ -88,13 +96,12 @@ public class GameController : NetworkBehaviour
 
     public override void OnStartClient()
     {
-        Debug.Log("Client started");
         for (int i = 0; i < 100; i++)
         {
             if (objGrid[i] != 0)
             {
                 GameObject prefab = getPrefab(objGrid[i]);
-                var res = (GameObject)Instantiate(prefab, prefab.transform.position + new Vector3((i - 50) * 1.28f, 0, 0), prefab.transform.rotation);
+                Instantiate(prefab, prefab.transform.position + new Vector3((i - 50) * 1.28f, 0, 0), prefab.transform.rotation);
             }
         }
     }
