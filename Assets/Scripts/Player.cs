@@ -15,14 +15,25 @@ public class Player : NetworkBehaviour
     public int currentHealth = maxHealth;
     public RectTransform healthBar;
 
+    Animator animator;
+
     int jumps = 0;
 
+    private void Start()
+    {
+        animator = GetComponent<Animator>();
+    }
 
     void Update () {
         if (isLocalPlayer)
         {
             var movex = Input.GetAxis("Horizontal") * Time.deltaTime * 5.0f;
             transform.Translate(movex, 0, 0);
+            if (movex != 0)
+            {
+                animator.SetTrigger("Walk");
+            }
+
             if (movex < 0)
             {
                 GetComponent<SpriteRenderer>().flipX = true;
@@ -35,6 +46,7 @@ public class Player : NetworkBehaviour
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 CmdFire();
+                animator.SetTrigger("Attack");
             }
 
             if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
@@ -43,7 +55,12 @@ public class Player : NetworkBehaviour
                 {
                     Jump();
                     jumps += 1;
+                    animator.SetTrigger("Jump");
                 }
+            }
+
+            if (GetComponent<Rigidbody2D>().velocity.y < 0) {
+                animator.SetTrigger("Falling");
             }
         }
     }
@@ -51,13 +68,14 @@ public class Player : NetworkBehaviour
     void Jump()
     {
         GetComponent<Rigidbody2D>().AddForce(new Vector2(0, 1 + 4 / (jumps+1)), ForceMode2D.Impulse);
-        Debug.Log(1 + 4 / (jumps + 1));
+        animator.SetTrigger("Jump");
     }
 
     void OnCollisionEnter2D(Collision2D col)
     {
         if(col.gameObject.tag == "Ground"){
             jumps = 0;
+            animator.SetTrigger("Hit Ground");
         }
     }
 
