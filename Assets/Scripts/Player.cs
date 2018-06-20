@@ -81,6 +81,7 @@ public class Player : NetworkBehaviour
 
     public override void OnStartLocalPlayer()
     {
+        GameObject.FindWithTag("MainCamera").GetComponent<CameraController>().player = transform;
         GetComponent<SpriteRenderer>().color = new Color(0.6f, 1, 0.6f, 1);
         Destroy(healthBar.gameObject);
     }
