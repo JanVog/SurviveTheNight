@@ -29,7 +29,7 @@ public class GameController : MonoBehaviour {
             objGridClosed[i] = new List<int>();
         }
 
-        refillWorld();
+        InvokeRepeating("refillWorld", 0.0f, 20.0f);
     }
 
     void refillWorld()
