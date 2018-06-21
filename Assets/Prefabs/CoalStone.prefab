@@ -20,6 +20,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4003849880683270}
   - component: {fileID: 212205228011864880}
+  - component: {fileID: 114030434066339734}
   m_Layer: 9
   m_Name: CoalStone
   m_TagString: Untagged
@@ -40,6 +41,38 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114030434066339734
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1122098450311024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 372142912, guid: dc443db3e92b4983b9738c1131f555cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SceneId:
+    m_Value: 0
+  m_AssetId:
+    i0: 6
+    i1: 57
+    i2: 220
+    i3: 207
+    i4: 210
+    i5: 243
+    i6: 235
+    i7: 180
+    i8: 105
+    i9: 252
+    i10: 166
+    i11: 181
+    i12: 103
+    i13: 138
+    i14: 252
+    i15: 237
+  m_ServerOnly: 0
+  m_LocalPlayerAuthority: 0
 --- !u!212 &212205228011864880
 SpriteRenderer:
   m_ObjectHideFlags: 1

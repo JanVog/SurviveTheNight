@@ -23,7 +23,7 @@ public class GameController : NetworkBehaviour
     {
         if (isServer)
         {
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 200; i++)
             {
                 objGrid.Add(0);
             }
@@ -51,27 +51,25 @@ public class GameController : NetworkBehaviour
                 while (objGridOpen[i].Count > 5)
                 {
                     int resNo = Random.Range(1, 100);
-                    int index = Random.Range(0, objGridOpen[i].Count - 1);
-                    Debug.Log(index);
-                    int objIndex = 50 + objGridOpen[i][index];
+                    int grid_index = Random.Range(0, objGridOpen[i].Count - 1);
+                    int objIndex = 100 + objGridOpen[i][grid_index];
                     objGrid[objIndex] = resNo;
                     objGrid.Dirty(objIndex);
-                    objGridClosed[i].Add(objGridOpen[i][index]);
-                    RpcSpawnResource(objGridOpen[i][index], resNo);
-                    objGridOpen[i].RemoveAt(index);
+                    objGridClosed[i].Add(objGridOpen[i][grid_index]);
+                    SpawnResource(objGridOpen[i][grid_index], resNo);
+                    objGridOpen[i].RemoveAt(grid_index);
                 }
             }
         }
     }
-
-    [ClientRpc]
-    void RpcSpawnResource(int posx, int resNo)
+    
+    void SpawnResource(int posx, int resNo)
     {
-        Debug.Log("Objects Spawning");
         GameObject prefab = getPrefab(resNo);
 
         // Create the resource on the map
-        Instantiate(prefab, prefab.transform.position + new Vector3(posx * 1.28f, 0, 0), prefab.transform.rotation);
+        GameObject res = (GameObject) Instantiate(prefab, prefab.transform.position + new Vector3(posx * 1.28f, 0, 0), prefab.transform.rotation);
+        NetworkServer.Spawn(res);
     }
 
     public GameObject getPrefab(int resNo)
@@ -94,14 +92,27 @@ public class GameController : NetworkBehaviour
         }
     }
 
+    [Command]
+    public void CmdPrintGrid()
+    {
+        foreach (int o in objGrid)
+        {
+            Debug.Log(o);
+        }
+    }
+
     public override void OnStartClient()
     {
-        for (int i = 0; i < 100; i++)
+        if (!isServer)
         {
-            if (objGrid[i] != 0)
+            for (int i = 0; i < 200; i++)
             {
-                GameObject prefab = getPrefab(objGrid[i]);
-                Instantiate(prefab, prefab.transform.position + new Vector3((i - 50) * 1.28f, 0, 0), prefab.transform.rotation);
+                if (objGrid[i] != 0)
+                {
+                    Debug.Log("Creating resource");
+                    GameObject prefab = getPrefab(objGrid[i]);
+                    Instantiate(prefab, prefab.transform.position + new Vector3((i - 100) * 1.28f, 0, 0), prefab.transform.rotation);
+                }
             }
         }
     }

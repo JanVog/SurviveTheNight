@@ -20,6 +20,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4955902662421750}
   - component: {fileID: 212743406485781822}
+  - component: {fileID: 114500158912510170}
   m_Layer: 0
   m_Name: TreeWhite
   m_TagString: Untagged
@@ -40,6 +41,38 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114500158912510170
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1570459651647942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 372142912, guid: dc443db3e92b4983b9738c1131f555cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SceneId:
+    m_Value: 0
+  m_AssetId:
+    i0: 218
+    i1: 91
+    i2: 123
+    i3: 193
+    i4: 155
+    i5: 184
+    i6: 159
+    i7: 68
+    i8: 216
+    i9: 89
+    i10: 221
+    i11: 20
+    i12: 80
+    i13: 215
+    i14: 160
+    i15: 105
+  m_ServerOnly: 0
+  m_LocalPlayerAuthority: 0
 --- !u!212 &212743406485781822
 SpriteRenderer:
   m_ObjectHideFlags: 1
