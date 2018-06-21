@@ -15,6 +15,8 @@ public class Player : NetworkBehaviour
     public int currentHealth = maxHealth;
     public RectTransform healthBar;
 
+    Time lastActionTime = null;
+
     public Transform misc;
 
 
@@ -53,37 +55,9 @@ public class Player : NetworkBehaviour
                 {
                     GetComponent<SpriteRenderer>().flipX = false;
                 }
-            } else if (!stoppedMoving)
+            } else if (!stoppedMoving && -0.001f < GetComponent<Rigidbody2D>().velocity.y && GetComponent<Rigidbody2D>().velocity.y < 0.001f)
             {
-                stoppedMoving = true;
-                //Check for a new state after movement ends
-                float forwardDist = 0.3f;
-                if (GetComponent<SpriteRenderer>().flipX == true)
-                    forwardDist *= -1;
-                string obj = gc.getObjAtPos(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist));
-
-                bool farming = true;
-                switch (obj) {
-                    case "tree":
-                        //change to axe
-                        break;
-                    case "white_tree":
-                        //change to axe
-                        break;
-                    case "stone":
-                        //change to pickaxe
-                        break;
-                    case "coal_stone":
-                        //change to pickaxe
-                        break;
-                    default:
-                        farming = false;
-                        break;
-                }
-                if (farming)
-                {
-                    animator.SetTrigger("Attack");
-                }
+                MovementStopped();
             }  
 
             if (Input.GetKeyDown(KeyCode.Space))
@@ -91,6 +65,8 @@ public class Player : NetworkBehaviour
                 CmdFire();
                 animator.SetTrigger("Attack");
             }
+
+
 
             if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
             {
@@ -105,6 +81,51 @@ public class Player : NetworkBehaviour
             if (GetComponent<Rigidbody2D>().velocity.y < 0) {
                 animator.SetTrigger("Falling");
             }
+
+
+        }
+    }
+
+    void MovementStopped()
+    {
+        stoppedMoving = true;
+        //Check for a new state after movement ends
+        float forwardDist = 0.3f;
+        if (GetComponent<SpriteRenderer>().flipX == true)
+            forwardDist *= -1;
+        string obj = gc.getObjAtPos(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist));
+
+        bool farming = true;
+        switch (obj)
+        {
+            case "tree":
+                //change to axe
+                state = "lumber";
+                break;
+            case "white_tree":
+                //change to axe
+                state = "lumber";
+                break;
+            case "stone":
+                //change to pickaxe
+                state = "miner";
+                break;
+            case "coal_stone":
+                //change to pickaxe
+                state = "miner";
+                break;
+            default:
+                farming = false;
+                state = "idle";
+                break;
+        }
+        if (farming)
+        {
+            animator.SetTrigger("Attack");
+        }
+        else
+        {
+            animator.SetTrigger("Idle");
         }
     }
 
