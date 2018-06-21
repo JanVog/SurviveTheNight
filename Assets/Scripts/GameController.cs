@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.UI;
 
 public class GameController : NetworkBehaviour
 {
@@ -15,12 +16,17 @@ public class GameController : NetworkBehaviour
     public GameObject treePrefab;
     public GameObject wallTrapPrefab;
 
+    public Transform misc;
+
+    public Text woodTxt;
+
     Dictionary<string, GameObject> prefabDict = new Dictionary<string, GameObject>();
 
     public override void OnStartServer()
     {
         initPrefabs();
         initMap();
+        woodTxt.text = 87.ToString();
     }
 
     void initPrefabs()
@@ -81,7 +87,7 @@ public class GameController : NetworkBehaviour
         GameObject prefab = getPrefab(resNo);
 
         // Create the resource on the map
-        GameObject res = (GameObject) Instantiate(prefab, prefab.transform.position + new Vector3(posx * 1.28f, 0, 0), prefab.transform.rotation);
+        GameObject res = (GameObject) Instantiate(prefab, prefab.transform.position + new Vector3(posx * 1.28f, 0, -2), prefab.transform.rotation, misc);
         NetworkServer.Spawn(res);
     }
 
@@ -133,15 +139,15 @@ public class GameController : NetworkBehaviour
 
     public override void OnStartClient()
     {
-        if (!isServer)
+        // Todo: Check if needed
+        if (!isServer && false)
         {
             for (int i = 0; i < 200; i++)
             {
                 if (objGrid[i] != 0)
                 {
-                    Debug.Log("Creating resource");
                     GameObject prefab = getPrefab(objGrid[i]);
-                    Instantiate(prefab, prefab.transform.position + new Vector3((i - 100) * 1.28f, 0, 0), prefab.transform.rotation);
+                    Instantiate(prefab, prefab.transform.position + new Vector3((i - 100) * 1.28f, 0, 0), prefab.transform.rotation, misc);
                 }
             }
         }
@@ -149,7 +155,6 @@ public class GameController : NetworkBehaviour
     
     public string getObjAtPos(int posx)
     {
-        Debug.Log(posx + " " + getObjName(objGrid[posx + 100]));
         return getObjName(objGrid[100 + posx]);
     }
 }

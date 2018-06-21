@@ -15,6 +15,9 @@ public class Player : NetworkBehaviour
     public int currentHealth = maxHealth;
     public RectTransform healthBar;
 
+    public Transform misc;
+
+
     bool stoppedMoving = true;
 
     string state = "";
@@ -27,6 +30,7 @@ public class Player : NetworkBehaviour
     private void Start()
     {
         gc = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameController>();
+        misc = GameObject.FindGameObjectWithTag("Misc").transform;
         animator = GetComponent<Animator>();
     }
 
@@ -53,7 +57,10 @@ public class Player : NetworkBehaviour
             {
                 stoppedMoving = true;
                 //Check for a new state after movement ends
-                string obj = gc.getObjAtPos(Mathf.RoundToInt(transform.position.x / 1.28f + 0.2f));
+                float forwardDist = 0.3f;
+                if (GetComponent<SpriteRenderer>().flipX == true)
+                    forwardDist *= -1;
+                string obj = gc.getObjAtPos(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist));
 
                 bool farming = true;
                 switch (obj) {
@@ -71,13 +78,11 @@ public class Player : NetworkBehaviour
                         break;
                     default:
                         farming = false;
-                        Debug.Log("not farming");
                         break;
                 }
                 if (farming)
                 {
                     animator.SetTrigger("Attack");
-                    //  Debug.Log("farming");
                 }
             }  
 
@@ -133,7 +138,8 @@ public class Player : NetworkBehaviour
         var bullet = (GameObject)Instantiate(
             bulletPrefab,
             bulletSpawn.position +  new Vector3(dirMult/5f, 0, 0),
-            bulletSpawn.rotation);
+            bulletSpawn.rotation,
+            misc);
 
         // Add velocity to the bullet
         bullet.GetComponent<Rigidbody2D>().velocity = new Vector2(dirMult*8, 0);
