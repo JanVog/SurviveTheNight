@@ -15,12 +15,18 @@ public class Player : NetworkBehaviour
     public int currentHealth = maxHealth;
     public RectTransform healthBar;
 
+    bool stoppedMoving = true;
+
+    string state = "";
+    GameController gc;
+
     Animator animator;
 
     int jumps = 0;
 
     private void Start()
     {
+        gc = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameController>();
         animator = GetComponent<Animator>();
     }
 
@@ -28,20 +34,52 @@ public class Player : NetworkBehaviour
         if (isLocalPlayer)
         {
             var movex = Input.GetAxis("Horizontal") * Time.deltaTime * 5.0f;
-            transform.Translate(movex, 0, 0);
-            if (movex != 0)
+            //Check if player needs to move
+            if (movex >= 0.01f || movex <= -0.01f)
             {
-                animator.SetTrigger("Walk");
-            }
+                stoppedMoving = false;
+                transform.Translate(movex, 0, 0);
 
-            if (movex < 0)
+                animator.SetTrigger("Walk");
+                if (movex < 0)
+                {
+                    GetComponent<SpriteRenderer>().flipX = true;
+                }
+                else if (movex > 0)
+                {
+                    GetComponent<SpriteRenderer>().flipX = false;
+                }
+            } else if (!stoppedMoving)
             {
-                GetComponent<SpriteRenderer>().flipX = true;
-            }
-            else if(movex > 0)
-            {
-                GetComponent<SpriteRenderer>().flipX = false;
-            }
+                stoppedMoving = true;
+                //Check for a new state after movement ends
+                string obj = gc.getObjAtPos(Mathf.RoundToInt(transform.position.x / 1.28f + 0.2f));
+
+                bool farming = true;
+                switch (obj) {
+                    case "tree":
+                        //change to axe
+                        break;
+                    case "white_tree":
+                        //change to axe
+                        break;
+                    case "stone":
+                        //change to pickaxe
+                        break;
+                    case "coal_stone":
+                        //change to pickaxe
+                        break;
+                    default:
+                        farming = false;
+                        Debug.Log("not farming");
+                        break;
+                }
+                if (farming)
+                {
+                    animator.SetTrigger("Attack");
+                    //  Debug.Log("farming");
+                }
+            }  
 
             if (Input.GetKeyDown(KeyCode.Space))
             {

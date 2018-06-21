@@ -13,10 +13,23 @@ public class GameController : NetworkBehaviour
     public GameObject coalStonePrefab;
     public GameObject whiteTreePrefab;
     public GameObject treePrefab;
+    public GameObject wallTrapPrefab;
+
+    Dictionary<string, GameObject> prefabDict = new Dictionary<string, GameObject>();
 
     public override void OnStartServer()
     {
+        initPrefabs();
         initMap();
+    }
+
+    void initPrefabs()
+    {
+        prefabDict.Add("stone", stonePrefab);
+        prefabDict.Add("coal_stone", coalStonePrefab);
+        prefabDict.Add("tree", treePrefab);
+        prefabDict.Add("white_tree", whiteTreePrefab);
+        prefabDict.Add("wall_trap", wallTrapPrefab);
     }
 
     void initMap()
@@ -74,21 +87,38 @@ public class GameController : NetworkBehaviour
 
     public GameObject getPrefab(int resNo)
     {
-        if (resNo <= 5)
+        return prefabDict[getObjName(resNo)];   
+    }
+
+    public string getObjName(int resNo)
+    {
+        if (resNo == 0)
         {
-            return whiteTreePrefab;
+            return "";
+        }
+        else if (resNo <= 5)
+        {
+            return "white_tree";
         }
         else if (resNo <= 10)
         {
-            return coalStonePrefab;
+            return "coal_stone";
         }
         else if (resNo <= 55)
         {
-            return stonePrefab;
+            return "stone";
+        }
+        else if (resNo <= 100)
+        {
+            return "tree";
+        }
+        else if (resNo == 101)
+        {
+            return "wall_trap";
         }
         else
         {
-            return treePrefab;
+            return "";
         }
     }
 
@@ -115,5 +145,11 @@ public class GameController : NetworkBehaviour
                 }
             }
         }
+    }
+    
+    public string getObjAtPos(int posx)
+    {
+        Debug.Log(posx + " " + getObjName(objGrid[posx + 100]));
+        return getObjName(objGrid[100 + posx]);
     }
 }
