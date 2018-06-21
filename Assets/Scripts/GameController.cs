@@ -157,4 +157,10 @@ public class GameController : NetworkBehaviour
     {
         return getObjName(objGrid[100 + posx]);
     }
+
+    [Command]
+    public void CmdFarmResource()
+    {
+
+    }
 }

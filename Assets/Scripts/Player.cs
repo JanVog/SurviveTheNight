@@ -15,10 +15,13 @@ public class Player : NetworkBehaviour
     public int currentHealth = maxHealth;
     public RectTransform healthBar;
 
-    Time lastActionTime = null;
+    public float axeCoolDown = 1.0f;
+    public float pickaxeCoolDown = 1.0f;
+    public float meleeCoolDown = 1.0f;
+
+    float lastActionTime;
 
     public Transform misc;
-
 
     bool stoppedMoving = true;
 
@@ -34,6 +37,7 @@ public class Player : NetworkBehaviour
         gc = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameController>();
         misc = GameObject.FindGameObjectWithTag("Misc").transform;
         animator = GetComponent<Animator>();
+        lastActionTime = Time.time;
     }
 
     void Update () {
@@ -66,7 +70,16 @@ public class Player : NetworkBehaviour
                 animator.SetTrigger("Attack");
             }
 
-
+            if(state != "")
+            {
+                if (state == "lumber" && lastActionTime + axeCoolDown < Time.time)
+                {
+                    gc.CmdFarmResource(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist));
+                }else if (state == "miner" && lastActionTime + pickaxeCoolDown < Time.time)
+                {
+                    gc.CmdFarmResource(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist));
+                }
+            }
 
             if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
             {
