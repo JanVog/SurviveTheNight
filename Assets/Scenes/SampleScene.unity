@@ -13457,6 +13457,9 @@ MonoBehaviour:
     type: 2}
   treePrefab: {fileID: 1295283316802572, guid: 6732a0e3261f4cb4093460920e6d9e34, type: 2}
   wallTrapPrefab: {fileID: 0}
+  stonepiecePrefab: {fileID: 1749056683191870, guid: c06fc0457b00dc34a993b9506d7cf63e,
+    type: 2}
+  woodPrefab: {fileID: 1018302379774056, guid: 06ab6bc00bdac274b93cd40105cf5c0b, type: 2}
   misc: {fileID: 1692081756}
   woodTxt: {fileID: 112682537}
 --- !u!114 &919631054

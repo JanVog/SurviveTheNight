@@ -72,12 +72,19 @@ public class Player : NetworkBehaviour
 
             if(state != "")
             {
+                Debug.Log(Time.time);
+                float forwardDist = 0.3f;
+                if (GetComponent<SpriteRenderer>().flipX == true)
+                    forwardDist *= -1;
                 if (state == "lumber" && lastActionTime + axeCoolDown < Time.time)
                 {
                     gc.CmdFarmResource(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist));
-                }else if (state == "miner" && lastActionTime + pickaxeCoolDown < Time.time)
+                    lastActionTime = Time.time;
+                }
+                else if (state == "miner" && lastActionTime + pickaxeCoolDown < Time.time)
                 {
                     gc.CmdFarmResource(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist));
+                    lastActionTime = Time.time;
                 }
             }
 
@@ -134,6 +141,7 @@ public class Player : NetworkBehaviour
         }
         if (farming)
         {
+            Debug.Log(obj);
             animator.SetTrigger("Attack");
         }
         else

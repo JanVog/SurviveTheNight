@@ -7,6 +7,9 @@ TagManager:
   - Ground
   - NetworkManager
   - Misc
+  - stone
+  - coal
+  - wood
   layers:
   - Default
   - TransparentFX
