@@ -38,11 +38,16 @@ public class GameController : NetworkBehaviour
     public GameObject woodPrefab;
 
     public Transform misc;
-    public NetworkManager nm;
 
     public Text woodTxt;
 
+    Dictionary<string, Text> uiDict = new Dictionary<string, Text>();
+
     Dictionary<string, SpawnableObject> prefabDict = new Dictionary<string, SpawnableObject>();
+
+    List<Dictionary<string, int>> resourceListPlayers;
+    List<NetworkConnection> connectionList;
+    Dictionary<NetworkInstanceId, int> playerIds;
 
     public override void OnStartServer()
     {
@@ -51,8 +56,26 @@ public class GameController : NetworkBehaviour
             objGrid = new List<GridObject>();
             initPrefabs();
             initMap();
+            playerIds = new Dictionary<NetworkInstanceId, int>();
+            resourceListPlayers = new List<Dictionary<string, int>>();
+            resourceListPlayers.Add(new Dictionary<string, int>() { { "stone", 0 }, { "tree", 0 }, { "coal_stone", 0 } });
+            connectionList = new List<NetworkConnection>();
             woodTxt.text = 87.ToString();
         }
+    }
+
+    public void addHostPlayer(NetworkInstanceId nid)
+    {
+        connectionList.Add(null);
+        playerIds.Add(nid, 0);
+    }
+
+    [Command]
+    public void CmdPlayerConnected(NetworkInstanceId nid)
+    {
+        playerIds.Add(nid, connectionList.Count);
+        resourceListPlayers.Add(new Dictionary<string, int>() { { "stone", 0 }, { "tree", 0 }, { "coal_stone", 0 } });
+        connectionList.Add(NetworkServer.FindLocalObject(nid).gameObject.GetComponent<NetworkIdentity>().connectionToClient);
     }
 
     void initPrefabs()
@@ -62,6 +85,10 @@ public class GameController : NetworkBehaviour
         prefabDict.Add("tree", new SpawnableObject(treePrefab, 15));
         prefabDict.Add("white_tree", new SpawnableObject(whiteTreePrefab, 15));
         prefabDict.Add("wall_trap", new SpawnableObject(wallTrapPrefab, 15));
+
+        uiDict.Add("tree", woodTxt);
+        uiDict.Add("stone", woodTxt);
+        uiDict.Add("coal_stone", woodTxt);
     }
 
     void initMap()
@@ -102,20 +129,21 @@ public class GameController : NetworkBehaviour
                     objGrid[objIndex].name = name;
                     objGrid[objIndex].hp = prefabDict[name].hp;
                     objGridClosed[i].Add(objGridOpen[i][grid_index]);
-                    SpawnResource(objGridOpen[i][grid_index], name);
+                    objGrid[objIndex].nid = SpawnResource(objGridOpen[i][grid_index], name);
                     objGridOpen[i].RemoveAt(grid_index);
                 }
             }
         }
     }
     
-    void SpawnResource(int posx, string resName)
+    NetworkInstanceId SpawnResource(int posx, string resName)
     {
         GameObject prefab = getPrefab(resName);
 
         // Create the resource on the map
-        GameObject res = (GameObject) Instantiate(prefab, prefab.transform.position + new Vector3(posx * 1.28f, 0, -2), prefab.transform.rotation, misc);
+        GameObject res = (GameObject) Instantiate(prefab, prefab.transform.position + new Vector3((posx + 0.5f) * 1.28f, 0, -2), prefab.transform.rotation, misc);
         NetworkServer.Spawn(res);
+        return res.GetComponent<NetworkIdentity>().netId;
     }
 
     public GameObject getPrefab(string res)
@@ -164,7 +192,7 @@ public class GameController : NetworkBehaviour
         }
     }
 
-    public override void OnStartClient()
+    /*public override void OnStartClient()
     {
         // Todo: Check if needed
         if (!isServer && false)
@@ -178,7 +206,7 @@ public class GameController : NetworkBehaviour
                 }
             }
         }
-    }
+    }*/
     
     public string getObjAtPos(int posx)
     {
@@ -186,19 +214,20 @@ public class GameController : NetworkBehaviour
     }
 
     [Command]
-    public void CmdFarmResource(int posx, NetworkConnection connection)
+    public void CmdFarmResource(int posx, NetworkInstanceId nid)
     {
         objGrid[100 + posx].hp -= 1;
 
         //Todo: chance to get coal, etc.
         GameObject prefab = null;
-        switch (getObjAtPos(posx))
+        string objType = getObjAtPos(posx);
+        switch (objType)
         {
             case "stone":
                 prefab = stonepiecePrefab;
                 break;
             case "coal_stone":
-                prefab = coalStonePrefab;
+                prefab = stonepiecePrefab;
                 break;
             case "tree":
                 prefab = woodPrefab;
@@ -207,25 +236,57 @@ public class GameController : NetworkBehaviour
                 prefab = woodPrefab;
                 break;
         }
-        Debug.Log(getObjAtPos(posx));
 
-        // Create the resource-piece on the map
-        GameObject res = (GameObject)Instantiate(prefab, prefab.transform.position + new Vector3((posx + Random.value * 2 - 1) * 1.28f, 0, -2), prefab.transform.rotation, misc);
-        NetworkServer.Spawn(res);
+        GameObject player = NetworkServer.FindLocalObject(nid).gameObject;
+        if (prefab != null)
+        {
+            // Create the resource-piece on the map
+            GameObject res = (GameObject)Instantiate(prefab, prefab.transform.position + new Vector3((posx + 0.5f) * 1.28f, 0.5f, -2), prefab.transform.rotation, misc);
+            Drop ds = res.GetComponent<Drop>();
+            ds.target = player.transform;
+            ds.landingpos = res.transform.position.x + (Random.value - 0.5f) * 2;
+            ds.gc = this;
+            ds.objType = objType;
+            ds.playerId = playerIds[nid];
+            NetworkServer.Spawn(res);
+        }
 
         if (objGrid[100 + posx].hp <= 0)
         {
             objGrid[100 + posx].hp = 0;
             objGrid[100 + posx].name = null;
             NetworkServer.Destroy(NetworkServer.FindLocalObject(objGrid[100 + posx].nid));
-            TargetChangeState(connection);
+            TargetChangeState(player.GetComponent<NetworkIdentity>().connectionToClient);
+        }
+    }
 
+    [Command]
+    public void CmdPickDrop(string objType, int playerId)
+    {
+        resourceListPlayers[playerId][objType] += 1;
+        if (!isServer)
+        {
+            TargetAddResource(connectionList[playerId], objType, resourceListPlayers[playerId][objType]);
+        } else
+        {
+            addResource(objType, resourceListPlayers[playerId][objType]);
         }
     }
 
     [TargetRpc]
-    public void TargetChangeState(NetworkConnection connecton)
+    public void TargetAddResource(NetworkConnection target, string objType, int value)
     {
-        nm.client.connection.playerControllers[0].gameObject.GetComponent<Player>().state = "";
+        uiDict[objType].text = value.ToString();
+    }
+
+    void addResource(string objType, int value)
+    {
+        uiDict[objType].text = value.ToString();
+    }
+
+    [TargetRpc]
+    public void TargetChangeState(NetworkConnection target)
+    {
+        target.playerControllers[0].gameObject.GetComponent<Player>().state = "";
     }
 }

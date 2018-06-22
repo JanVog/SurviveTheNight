@@ -19,7 +19,7 @@ public class Player : NetworkBehaviour
     public float pickaxeCoolDown = 1.0f;
     public float meleeCoolDown = 1.0f;
 
-    float lastActionTime;
+    float lastActionTime = 0;
 
     public Transform misc;
 
@@ -27,7 +27,6 @@ public class Player : NetworkBehaviour
 
     public string state = "";
     GameController gc;
-    NetworkManager nm;
 
     Animator animator;
 
@@ -36,23 +35,34 @@ public class Player : NetworkBehaviour
     private void Start()
     {
         gc = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameController>();
-        nm = GameObject.FindGameObjectWithTag("NetworkManager").GetComponent<NetworkManager>();
+        if (!isServer)
+        {
+            gc.CmdPlayerConnected(GetComponent<NetworkIdentity>().netId);
+        }
+        else
+        {
+            gc.addHostPlayer(GetComponent<NetworkIdentity>().netId);
+        }
         misc = GameObject.FindGameObjectWithTag("Misc").transform;
         animator = GetComponent<Animator>();
-        lastActionTime = Time.time;
     }
 
     void Update () {
+        lastActionTime += Time.deltaTime;
         if (isLocalPlayer)
         {
             var movex = Input.GetAxis("Horizontal") * Time.deltaTime * 5.0f;
             //Check if player needs to move
             if (movex >= 0.01f || movex <= -0.01f)
             {
-                stoppedMoving = false;
+                if (stoppedMoving)
+                {
+                    stoppedMoving = false;
+                    animator.SetTrigger("Walk");
+                    state = "";
+                }
                 transform.Translate(movex, 0, 0);
 
-                animator.SetTrigger("Walk");
                 if (movex < 0)
                 {
                     GetComponent<SpriteRenderer>().flipX = true;
@@ -63,6 +73,7 @@ public class Player : NetworkBehaviour
                 }
             } else if (!stoppedMoving && -0.001f < GetComponent<Rigidbody2D>().velocity.y && GetComponent<Rigidbody2D>().velocity.y < 0.001f)
             {
+                lastActionTime = 0;
                 MovementStopped();
             }  
 
@@ -75,22 +86,22 @@ public class Player : NetworkBehaviour
             if(state != "")
             {
                 bool farming = false;
-                float forwardDist = 0.3f;
-                if (GetComponent<SpriteRenderer>().flipX == true)
-                    forwardDist *= -1;
-                if (state == "lumber" && lastActionTime + axeCoolDown < Time.time)
+                if (state == "lumber" && lastActionTime > axeCoolDown)
                 {
                     farming = true;
-                    lastActionTime = Time.time;
+                    lastActionTime = 0;
                 }
-                else if (state == "miner" && lastActionTime + pickaxeCoolDown < Time.time)
+                else if (state == "miner" && lastActionTime > pickaxeCoolDown)
                 {
                     farming = true;
-                    lastActionTime = Time.time;
+                    lastActionTime = 0;
                 }
                 if (farming)
                 {
-                    gc.CmdFarmResource(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist), nm.client.connection);
+                    float forwardDist = 0.15f;
+                    if (GetComponent<SpriteRenderer>().flipX == true)
+                        forwardDist *= -1;
+                    gc.CmdFarmResource((int) Mathf.Floor(transform.position.x / 1.28f + forwardDist), GetComponent<NetworkIdentity>().netId);
                 }
             }
 
@@ -117,7 +128,7 @@ public class Player : NetworkBehaviour
         float forwardDist = 0.3f;
         if (GetComponent<SpriteRenderer>().flipX == true)
             forwardDist *= -1;
-        string obj = gc.getObjAtPos(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist));
+        string obj = gc.getObjAtPos((int)Mathf.Floor(transform.position.x / 1.28f + forwardDist));
 
         bool farming = true;
         switch (obj)
