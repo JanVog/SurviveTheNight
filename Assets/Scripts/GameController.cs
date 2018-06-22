@@ -6,10 +6,28 @@ using UnityEngine.UI;
 
 public class GameController : NetworkBehaviour
 {
+    public class GridObject
+    {
+        public string name;
+        public int hp;
+        public NetworkInstanceId nid;
+    }
+
+    public class SpawnableObject
+    {
+        public GameObject prefab;
+        public int hp;
+
+        public SpawnableObject(GameObject prefab, int hp)
+        {
+             this.prefab = prefab;
+             this.hp = hp;
+        }
+    }
+
+    List<GridObject> objGrid;
     List<int>[] objGridOpen;
     List<int>[] objGridClosed;
-    SyncListInt objGrid = new SyncListInt();
-    SyncListInt objGridHp = new SyncListInt();
 
     public GameObject stonePrefab;
     public GameObject coalStonePrefab;
@@ -20,25 +38,30 @@ public class GameController : NetworkBehaviour
     public GameObject woodPrefab;
 
     public Transform misc;
+    public NetworkManager nm;
 
     public Text woodTxt;
 
-    Dictionary<string, GameObject> prefabDict = new Dictionary<string, GameObject>();
+    Dictionary<string, SpawnableObject> prefabDict = new Dictionary<string, SpawnableObject>();
 
     public override void OnStartServer()
     {
-        initPrefabs();
-        initMap();
-        woodTxt.text = 87.ToString();
+        if (isServer)
+        {
+            objGrid = new List<GridObject>();
+            initPrefabs();
+            initMap();
+            woodTxt.text = 87.ToString();
+        }
     }
 
     void initPrefabs()
     {
-        prefabDict.Add("stone", stonePrefab);
-        prefabDict.Add("coal_stone", coalStonePrefab);
-        prefabDict.Add("tree", treePrefab);
-        prefabDict.Add("white_tree", whiteTreePrefab);
-        prefabDict.Add("wall_trap", wallTrapPrefab);
+        prefabDict.Add("stone", new SpawnableObject(stonePrefab, 15));
+        prefabDict.Add("coal_stone", new SpawnableObject(coalStonePrefab, 15));
+        prefabDict.Add("tree", new SpawnableObject(treePrefab, 15));
+        prefabDict.Add("white_tree", new SpawnableObject(whiteTreePrefab, 15));
+        prefabDict.Add("wall_trap", new SpawnableObject(wallTrapPrefab, 15));
     }
 
     void initMap()
@@ -47,8 +70,7 @@ public class GameController : NetworkBehaviour
         {
             for (int i = 0; i < 200; i++)
             {
-                objGrid.Add(0);
-                objGridHp.Add(0);
+                objGrid.Add(new GridObject());
             }
             objGridOpen = new List<int>[20];
             for (int i = -10; i < 10; i++)
@@ -76,29 +98,29 @@ public class GameController : NetworkBehaviour
                     int resNo = Random.Range(1, 100);
                     int grid_index = Random.Range(0, objGridOpen[i].Count - 1);
                     int objIndex = 100 + objGridOpen[i][grid_index];
-                    objGrid[objIndex] = resNo;
-                    objGridHp[objIndex] = 15;
-                    objGrid.Dirty(objIndex);
+                    name = getObjName(resNo);
+                    objGrid[objIndex].name = name;
+                    objGrid[objIndex].hp = prefabDict[name].hp;
                     objGridClosed[i].Add(objGridOpen[i][grid_index]);
-                    SpawnResource(objGridOpen[i][grid_index], resNo);
+                    SpawnResource(objGridOpen[i][grid_index], name);
                     objGridOpen[i].RemoveAt(grid_index);
                 }
             }
         }
     }
     
-    void SpawnResource(int posx, int resNo)
+    void SpawnResource(int posx, string resName)
     {
-        GameObject prefab = getPrefab(resNo);
+        GameObject prefab = getPrefab(resName);
 
         // Create the resource on the map
         GameObject res = (GameObject) Instantiate(prefab, prefab.transform.position + new Vector3(posx * 1.28f, 0, -2), prefab.transform.rotation, misc);
         NetworkServer.Spawn(res);
     }
 
-    public GameObject getPrefab(int resNo)
+    public GameObject getPrefab(string res)
     {
-        return prefabDict[getObjName(resNo)];   
+        return prefabDict[res].prefab;
     }
 
     public string getObjName(int resNo)
@@ -136,7 +158,7 @@ public class GameController : NetworkBehaviour
     [Command]
     public void CmdPrintGrid()
     {
-        foreach (int o in objGrid)
+        foreach (GridObject o in objGrid)
         {
             Debug.Log(o);
         }
@@ -149,9 +171,9 @@ public class GameController : NetworkBehaviour
         {
             for (int i = 0; i < 200; i++)
             {
-                if (objGrid[i] != 0)
+                if (objGrid[i].name != "")
                 {
-                    GameObject prefab = getPrefab(objGrid[i]);
+                    GameObject prefab = getPrefab(objGrid[i].name);
                     Instantiate(prefab, prefab.transform.position + new Vector3((i - 100) * 1.28f, 0, 0), prefab.transform.rotation, misc);
                 }
             }
@@ -160,13 +182,13 @@ public class GameController : NetworkBehaviour
     
     public string getObjAtPos(int posx)
     {
-        return getObjName(objGrid[100 + posx]);
+        return objGrid[100 + posx].name;
     }
 
     [Command]
-    public void CmdFarmResource(int posx)
+    public void CmdFarmResource(int posx, NetworkConnection connection)
     {
-        objGridHp[100 + posx] -= 1;
+        objGrid[100 + posx].hp -= 1;
 
         //Todo: chance to get coal, etc.
         GameObject prefab = null;
@@ -191,13 +213,19 @@ public class GameController : NetworkBehaviour
         GameObject res = (GameObject)Instantiate(prefab, prefab.transform.position + new Vector3((posx + Random.value * 2 - 1) * 1.28f, 0, -2), prefab.transform.rotation, misc);
         NetworkServer.Spawn(res);
 
-        if (objGridHp[100 + posx] <= 0)
+        if (objGrid[100 + posx].hp <= 0)
         {
-            objGridHp[100 + posx] = 0;
-            objGrid[100 + posx] = 0;
-            objGrid.Dirty(100 + posx);
+            objGrid[100 + posx].hp = 0;
+            objGrid[100 + posx].name = null;
+            NetworkServer.Destroy(NetworkServer.FindLocalObject(objGrid[100 + posx].nid));
+            TargetChangeState(connection);
+
         }
-        objGridHp.Dirty(100 + posx);
-        //Todo: Change snylists to struct, add networkinstanceid to find gameobjects and remove them
+    }
+
+    [TargetRpc]
+    public void TargetChangeState(NetworkConnection connecton)
+    {
+        nm.client.connection.playerControllers[0].gameObject.GetComponent<Player>().state = "";
     }
 }

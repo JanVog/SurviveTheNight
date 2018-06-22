@@ -25,8 +25,9 @@ public class Player : NetworkBehaviour
 
     bool stoppedMoving = true;
 
-    string state = "";
+    public string state = "";
     GameController gc;
+    NetworkManager nm;
 
     Animator animator;
 
@@ -35,6 +36,7 @@ public class Player : NetworkBehaviour
     private void Start()
     {
         gc = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameController>();
+        nm = GameObject.FindGameObjectWithTag("NetworkManager").GetComponent<NetworkManager>();
         misc = GameObject.FindGameObjectWithTag("Misc").transform;
         animator = GetComponent<Animator>();
         lastActionTime = Time.time;
@@ -72,19 +74,23 @@ public class Player : NetworkBehaviour
 
             if(state != "")
             {
-                Debug.Log(Time.time);
+                bool farming = false;
                 float forwardDist = 0.3f;
                 if (GetComponent<SpriteRenderer>().flipX == true)
                     forwardDist *= -1;
                 if (state == "lumber" && lastActionTime + axeCoolDown < Time.time)
                 {
-                    gc.CmdFarmResource(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist));
+                    farming = true;
                     lastActionTime = Time.time;
                 }
                 else if (state == "miner" && lastActionTime + pickaxeCoolDown < Time.time)
                 {
-                    gc.CmdFarmResource(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist));
+                    farming = true;
                     lastActionTime = Time.time;
+                }
+                if (farming)
+                {
+                    gc.CmdFarmResource(Mathf.RoundToInt(transform.position.x / 1.28f + forwardDist), nm.client.connection);
                 }
             }
 
@@ -101,8 +107,6 @@ public class Player : NetworkBehaviour
             if (GetComponent<Rigidbody2D>().velocity.y < 0) {
                 animator.SetTrigger("Falling");
             }
-
-
         }
     }
 
@@ -141,7 +145,6 @@ public class Player : NetworkBehaviour
         }
         if (farming)
         {
-            Debug.Log(obj);
             animator.SetTrigger("Attack");
         }
         else
