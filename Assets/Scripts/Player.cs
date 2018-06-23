@@ -15,13 +15,15 @@ public class Player : NetworkBehaviour
     public int currentHealth = maxHealth;
     public RectTransform healthBar;
 
-    public float axeCoolDown = 1.0f;
-    public float pickaxeCoolDown = 1.0f;
-    public float meleeCoolDown = 1.0f;
+    public float axeCoolDown;
+    public float pickaxeCoolDown;
+    public float meleeCoolDown;
+    public int meleeDamage;
 
     float lastActionTime = 0;
+    float lastMeleeTime = 0;
 
-    public Transform misc;
+    Transform misc;
 
     bool stoppedMoving = true;
 
@@ -31,26 +33,37 @@ public class Player : NetworkBehaviour
     Animator animator;
 
     int jumps = 0;
+    int dir = 1;
+
+    public List<NetworkInstanceId> enemiesInRange;
 
     private void Start()
     {
-        gc = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameController>();
-        if (!isServer)
+        if (isLocalPlayer)
         {
-            gc.CmdPlayerConnected(GetComponent<NetworkIdentity>().netId);
-        }
-        else
+            enemiesInRange = new List<NetworkInstanceId>();
+            gc = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameController>();
+            if (!isServer)
+            {
+                gc.CmdPlayerConnected(GetComponent<NetworkIdentity>().netId);
+            }
+            else
+            {
+                gc.addHostPlayer(GetComponent<NetworkIdentity>().netId);
+            }
+            misc = GameObject.FindGameObjectWithTag("Misc").transform;
+            animator = GetComponent<Animator>();
+        } else
         {
-            gc.addHostPlayer(GetComponent<NetworkIdentity>().netId);
+            Destroy(transform.GetComponentInChildren<CircleCollider2D>());
         }
-        misc = GameObject.FindGameObjectWithTag("Misc").transform;
-        animator = GetComponent<Animator>();
     }
 
     void Update () {
-        lastActionTime += Time.deltaTime;
         if (isLocalPlayer)
         {
+            lastActionTime += Time.deltaTime;
+            lastMeleeTime += Time.deltaTime;
             var movex = Input.GetAxis("Horizontal") * Time.deltaTime * 5.0f;
             //Check if player needs to move
             if (movex >= 0.01f || movex <= -0.01f)
@@ -61,19 +74,22 @@ public class Player : NetworkBehaviour
                     animator.SetTrigger("Walk");
                     state = "";
                 }
-                transform.Translate(movex, 0, 0);
 
                 if (movex < 0)
                 {
-                    GetComponent<SpriteRenderer>().flipX = true;
+                    dir = -1;
+                    transform.rotation = Quaternion.Euler(0, 180, 0);
                 }
                 else if (movex > 0)
                 {
-                    GetComponent<SpriteRenderer>().flipX = false;
+                    dir = 1;
+                    transform.rotation = Quaternion.Euler(0, 0, 0);
                 }
+
+                transform.Translate(Mathf.Abs(movex), 0, 0);
             } else if (!stoppedMoving && -0.001f < GetComponent<Rigidbody2D>().velocity.y && GetComponent<Rigidbody2D>().velocity.y < 0.001f)
             {
-                lastActionTime = 0;
+                lastActionTime = 0.2f;
                 MovementStopped();
             }  
 
@@ -83,7 +99,16 @@ public class Player : NetworkBehaviour
                 animator.SetTrigger("Attack");
             }
 
-            if(state != "")
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (lastMeleeTime > meleeCoolDown)
+                {
+                    lastMeleeTime = 0;
+                    CmdHitEnemies(enemiesInRange.ToArray(), dir);
+                }
+            }
+
+            if (state != "")
             {
                 bool farming = false;
                 if (state == "lumber" && lastActionTime > axeCoolDown)
@@ -98,9 +123,7 @@ public class Player : NetworkBehaviour
                 }
                 if (farming)
                 {
-                    float forwardDist = 0.15f;
-                    if (GetComponent<SpriteRenderer>().flipX == true)
-                        forwardDist *= -1;
+                    float forwardDist = 0.15f * dir;
                     gc.CmdFarmResource((int) Mathf.Floor(transform.position.x / 1.28f + forwardDist), GetComponent<NetworkIdentity>().netId);
                 }
             }
@@ -121,13 +144,20 @@ public class Player : NetworkBehaviour
         }
     }
 
+    [Command]
+    public void CmdHitEnemies(NetworkInstanceId[] enemiesInRange, int dir)
+    {
+        foreach(NetworkInstanceId enemyId in enemiesInRange)
+        {
+            NetworkServer.FindLocalObject(enemyId).gameObject.GetComponent<Enemy>().TakeDamage(meleeDamage, dir);
+        }
+    }
+
     void MovementStopped()
     {
         stoppedMoving = true;
         //Check for a new state after movement ends
-        float forwardDist = 0.3f;
-        if (GetComponent<SpriteRenderer>().flipX == true)
-            forwardDist *= -1;
+        float forwardDist = 0.3f * dir;
         string obj = gc.getObjAtPos((int)Mathf.Floor(transform.position.x / 1.28f + forwardDist));
 
         bool farming = true;
@@ -188,17 +218,16 @@ public class Player : NetworkBehaviour
     [Command]
     void CmdFire()
     {
-        int dirMult = GetComponent<SpriteRenderer>().flipX ? -1 : 1;
 
         // Create the Bullet from the Bullet Prefab
         var bullet = (GameObject)Instantiate(
             bulletPrefab,
-            bulletSpawn.position +  new Vector3(dirMult/5f, 0, 0),
+            bulletSpawn.position +  new Vector3(5 * dir, 0, 0),
             bulletSpawn.rotation,
             misc);
 
         // Add velocity to the bullet
-        bullet.GetComponent<Rigidbody2D>().velocity = new Vector2(dirMult*8, 0);
+        bullet.GetComponent<Rigidbody2D>().velocity = new Vector2(8 * dir, 0);
 
         // Spawn the bullet on the Clients
         NetworkServer.Spawn(bullet);

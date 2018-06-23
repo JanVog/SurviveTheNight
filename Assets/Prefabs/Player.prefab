@@ -21,7 +21,7 @@ GameObject:
   - component: {fileID: 224619295325439516}
   - component: {fileID: 222017610008721620}
   - component: {fileID: 114981724274504542}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: Foreground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -37,7 +37,10 @@ GameObject:
   m_Component:
   - component: {fileID: 4990806670330358}
   - component: {fileID: 212329962098589996}
-  m_Layer: 11
+  - component: {fileID: 114514862770207680}
+  - component: {fileID: 50736411718572696}
+  - component: {fileID: 58687164496768254}
+  m_Layer: 13
   m_Name: Weapon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -54,7 +57,7 @@ GameObject:
   - component: {fileID: 224205674948153208}
   - component: {fileID: 222947604296094354}
   - component: {fileID: 114597820826812346}
-  m_Layer: 5
+  m_Layer: 10
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -92,7 +95,7 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4279678598355482}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: BulletSpawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -110,7 +113,7 @@ GameObject:
   - component: {fileID: 223794739718754312}
   - component: {fileID: 114598401117494328}
   - component: {fileID: 114311802266779208}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Healthbar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -137,7 +140,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1624617928467252}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -4}
+  m_LocalPosition: {x: 0, y: 0.34, z: -4}
   m_LocalScale: {x: 3.5, y: 3.5, z: 1}
   m_Children:
   - {fileID: 4279678598355482}
@@ -179,6 +182,41 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
+--- !u!50 &50736411718572696
+Rigidbody2D:
+  serializedVersion: 4
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1524478618786374}
+  m_BodyType: 1
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDrag: 0
+  m_AngularDrag: 0.05
+  m_GravityScale: 1
+  m_Material: {fileID: 0}
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 0
+--- !u!58 &58687164496768254
+CircleCollider2D:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1524478618786374}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0.3, y: 0.05}
+  serializedVersion: 2
+  m_Radius: 0.2
 --- !u!70 &70623463541729216
 CapsuleCollider2D:
   m_ObjectHideFlags: 1
@@ -223,9 +261,9 @@ MonoBehaviour:
   m_Script: {fileID: -1768714887, guid: 870353891bb340e2b2a9c8707e7419ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_TransformSyncMode: 1
+  m_TransformSyncMode: 2
   m_SendInterval: 0.1
-  m_SyncRotationAxis: 2
+  m_SyncRotationAxis: 3
   m_RotationSyncCompression: 0
   m_SyncSpin: 0
   m_MovementTheshold: 0.001
@@ -265,6 +303,12 @@ MonoBehaviour:
   bulletSpawn: {fileID: 4279678598355482}
   currentHealth: 100
   healthBar: {fileID: 224881785703408466}
+  axeCoolDown: 1
+  pickaxeCoolDown: 1
+  meleeCoolDown: 1
+  meleeDamage: 5
+  state: 
+  enemiesInRange: []
 --- !u!114 &114465498165381532
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -296,7 +340,19 @@ MonoBehaviour:
     i14: 235
     i15: 46
   m_ServerOnly: 0
-  m_LocalPlayerAuthority: 1
+  m_LocalPlayerAuthority: 0
+--- !u!114 &114514862770207680
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1524478618786374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e9e681b44ebd3c48bfa7be243692fa8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 114394508932245766}
 --- !u!114 &114597820826812346
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -357,7 +413,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Animator: {fileID: 95384675975971514}
-  m_ParameterSendBits: 31
+  m_ParameterSendBits: 0
   param0: 
   param1: 
   param2: 

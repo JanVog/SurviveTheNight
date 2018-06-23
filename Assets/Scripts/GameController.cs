@@ -58,7 +58,7 @@ public class GameController : NetworkBehaviour
             initMap();
             playerIds = new Dictionary<NetworkInstanceId, int>();
             resourceListPlayers = new List<Dictionary<string, int>>();
-            resourceListPlayers.Add(new Dictionary<string, int>() { { "stone", 0 }, { "tree", 0 }, { "coal_stone", 0 } });
+            resourceListPlayers.Add(new Dictionary<string, int>() { { "stone", 0 }, { "tree", 0 }, { "coal_stone", 0 }, { "white_tree", 0 } });
             connectionList = new List<NetworkConnection>();
             woodTxt.text = 87.ToString();
         }
@@ -74,7 +74,7 @@ public class GameController : NetworkBehaviour
     public void CmdPlayerConnected(NetworkInstanceId nid)
     {
         playerIds.Add(nid, connectionList.Count);
-        resourceListPlayers.Add(new Dictionary<string, int>() { { "stone", 0 }, { "tree", 0 }, { "coal_stone", 0 } });
+        resourceListPlayers.Add(new Dictionary<string, int>() { { "stone", 0 }, { "tree", 0 }, { "coal_stone", 0 }, {"white_tree", 0} });
         connectionList.Add(NetworkServer.FindLocalObject(nid).gameObject.GetComponent<NetworkIdentity>().connectionToClient);
     }
 
@@ -89,6 +89,7 @@ public class GameController : NetworkBehaviour
         uiDict.Add("tree", woodTxt);
         uiDict.Add("stone", woodTxt);
         uiDict.Add("coal_stone", woodTxt);
+        uiDict.Add("white_tree", woodTxt);
     }
 
     void initMap()
