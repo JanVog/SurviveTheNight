@@ -220,6 +220,8 @@ public class Player : NetworkBehaviour
         {
             Enemy.players.Add(transform);
         }
+        gc.playerLight = transform.GetChild(3).GetComponent<Light>();
+        gc.playerLightBack = transform.GetChild(4).GetComponent<Light>();
     }
 
     [Command]

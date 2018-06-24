@@ -36,8 +36,14 @@ public class GameController : NetworkBehaviour
     public GameObject wallTrapPrefab;
     public GameObject stonepiecePrefab;
     public GameObject woodPrefab;
+    public GameObject enemyPrefab;
 
     public Transform misc;
+    public Light sun;
+    public Light sunBack;
+    public List<Light> playerLights;
+    public Transform enemySpawnLeft;
+    public Transform enemySpawnRight;
 
     public Text woodTxt;
 
@@ -49,9 +55,10 @@ public class GameController : NetworkBehaviour
     List<NetworkConnection> connectionList;
     Dictionary<NetworkInstanceId, int> playerIds;
 
-    [SyncVar(hook="changeToDay")]
+    //Todo check if value changes although theres a hook
+    [SyncVar(hook="changeSceneToDay")]
     int day = 0;
-    //Todo hook on client or server only?
+    int dayLength;
 
     public override void OnStartServer()
     {
@@ -64,7 +71,10 @@ public class GameController : NetworkBehaviour
             resourceListPlayers = new List<Dictionary<string, int>>();
             resourceListPlayers.Add(new Dictionary<string, int>() { { "stone", 0 }, { "tree", 0 }, { "coal_stone", 0 }, { "white_tree", 0 } });
             connectionList = new List<NetworkConnection>();
-            woodTxt.text = 87.ToString();
+
+            dayLength = Random.Range(25, 35);
+            //Invoke("changeToNight", dayLength);
+            Invoke("changeToNight", 2);
         }
     }
 
@@ -89,6 +99,7 @@ public class GameController : NetworkBehaviour
         prefabDict.Add("tree", new SpawnableObject(treePrefab, 15));
         prefabDict.Add("white_tree", new SpawnableObject(whiteTreePrefab, 15));
         prefabDict.Add("wall_trap", new SpawnableObject(wallTrapPrefab, 15));
+        prefabDict.Add("enemy", new SpawnableObject(enemyPrefab, 100));
 
         uiDict.Add("tree", woodTxt);
         uiDict.Add("stone", woodTxt);
@@ -130,11 +141,11 @@ public class GameController : NetworkBehaviour
                     int resNo = Random.Range(1, 100);
                     int grid_index = Random.Range(0, objGridOpen[i].Count - 1);
                     int objIndex = 100 + objGridOpen[i][grid_index];
-                    name = getObjName(resNo);
-                    objGrid[objIndex].name = name;
-                    objGrid[objIndex].hp = prefabDict[name].hp;
+                    string objName = getObjName(resNo);
+                    objGrid[objIndex].name = objName;
+                    objGrid[objIndex].hp = prefabDict[objName].hp;
                     objGridClosed[i].Add(objGridOpen[i][grid_index]);
-                    objGrid[objIndex].nid = SpawnResource(objGridOpen[i][grid_index], name);
+                    objGrid[objIndex].nid = SpawnResource(objGridOpen[i][grid_index], objName);
                     objGridOpen[i].RemoveAt(grid_index);
                 }
             }
@@ -142,7 +153,7 @@ public class GameController : NetworkBehaviour
     }
     
     NetworkInstanceId SpawnResource(int posx, string resName)
-    {
+    {   
         GameObject prefab = getPrefab(resName);
 
         // Create the resource on the map
@@ -295,28 +306,53 @@ public class GameController : NetworkBehaviour
         target.playerControllers[0].gameObject.GetComponent<Player>().state = "";
     }
 
-    void SpawnEnemies() {
-
+    void SpawnEnemy()
+    {
+        GameObject prefab = prefabDict["enemy"].prefab;
+        float rnd = Random.value;
+        GameObject enemy;
+        Debug.Log("Spawning enemy at " + rnd);
+        if (rnd < 0.5f)
+        {
+            enemy = (GameObject)Instantiate(prefab, prefab.transform.position + enemySpawnLeft.transform.position, prefab.transform.rotation);
+        } else
+        {
+            enemy = (GameObject)Instantiate(prefab, prefab.transform.position + enemySpawnRight.transform.position, prefab.transform.rotation);
+        }
+        enemy.GetComponent<Enemy>().health = prefabDict["enemy"].hp;
+        NetworkServer.Spawn(enemy);
     }
 
     void changeToDay()
     {
-        //modifiy Scene
+        CancelInvoke("SpawnEnemies");
+        day += 1;
+        dayLength = Random.Range(25, 35);
+        Invoke("changeToNight", dayLength);
+    }
 
-        if (isServer)
-        {
-            CancelInvoke("SpawnEnemies");
-        }
+    void changeSceneToDay(int day)
+    {
+        sun.intensity = 0.6f;
+        sunBack.intensity = 0.6f;
+        playerLight.intensity = 0;
+        playerLightBack.intensity = 0;
     }
 
     void changeToNight()
     {
-        //modify Scene
+        InvokeRepeating("SpawnEnemy", 0, 5 - 4 * day);
+        RpcChangeToNight();
+        Invoke("changeToDay", 60 - dayLength);
+    }
 
-        if (isServer)
-        {
-            InvokeRepeating("SpawnEnemies", 0, 5 - 4 * day);
-        }
+    [ClientRpc]
+    void RpcChangeToNight()
+    {
+        sun.intensity = 0;
+        sunBack.intensity = 0;
+        playerLight.intensity = 3;
+        playerLightBack.intensity = 3;
     }
 
 }

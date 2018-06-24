@@ -8,7 +8,7 @@ public class Enemy : NetworkBehaviour {
     int state = 0;  // 0 = moving, 1 = attacking
     public float speed;
     public int health;
-    public static List<Transform> players;
+    public static List<Transform> players = new List<Transform>();
     int dir;
 
     private void Start()
