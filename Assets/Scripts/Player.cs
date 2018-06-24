@@ -213,6 +213,19 @@ public class Player : NetworkBehaviour
         GameObject.FindWithTag("MainCamera").GetComponent<CameraController>().player = transform;
         GetComponent<SpriteRenderer>().color = new Color(0.6f, 1, 0.6f, 1);
         Destroy(healthBar.gameObject);
+        if (!isServer)
+        {
+            CmdAddPlayerForEnemies();
+        } else
+        {
+            Enemy.players.Add(transform);
+        }
+    }
+
+    [Command]
+    void CmdAddPlayerForEnemies()
+    {
+        Enemy.players.Add(transform);
     }
 
     [Command]

@@ -49,6 +49,10 @@ public class GameController : NetworkBehaviour
     List<NetworkConnection> connectionList;
     Dictionary<NetworkInstanceId, int> playerIds;
 
+    [SyncVar(hook="changeToDay")]
+    int day = 0;
+    //Todo hook on client or server only?
+
     public override void OnStartServer()
     {
         if (isServer)
@@ -290,4 +294,29 @@ public class GameController : NetworkBehaviour
     {
         target.playerControllers[0].gameObject.GetComponent<Player>().state = "";
     }
+
+    void SpawnEnemies() {
+
+    }
+
+    void changeToDay()
+    {
+        //modifiy Scene
+
+        if (isServer)
+        {
+            CancelInvoke("SpawnEnemies");
+        }
+    }
+
+    void changeToNight()
+    {
+        //modify Scene
+
+        if (isServer)
+        {
+            InvokeRepeating("SpawnEnemies", 0, 5 - 4 * day);
+        }
+    }
+
 }
