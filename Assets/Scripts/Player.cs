@@ -53,6 +53,8 @@ public class Player : NetworkBehaviour
             }
             misc = GameObject.FindGameObjectWithTag("Misc").transform;
             animator = GetComponent<Animator>();
+            gc.CmdAddPlayerLight(transform.GetChild(3).gameObject);
+            gc.CmdAddPlayerLight(transform.GetChild(4).gameObject);
         } else
         {
             Destroy(transform.GetComponentInChildren<CircleCollider2D>());
@@ -220,8 +222,6 @@ public class Player : NetworkBehaviour
         {
             Enemy.players.Add(transform);
         }
-        gc.playerLight = transform.GetChild(3).GetComponent<Light>();
-        gc.playerLightBack = transform.GetChild(4).GetComponent<Light>();
     }
 
     [Command]

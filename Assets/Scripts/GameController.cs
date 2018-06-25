@@ -60,6 +60,11 @@ public class GameController : NetworkBehaviour
     int day = 0;
     int dayLength;
 
+    private void Start()
+    {
+        playerLights = new List<Light>();
+    }
+
     public override void OnStartServer()
     {
         if (isServer)
@@ -157,7 +162,7 @@ public class GameController : NetworkBehaviour
         GameObject prefab = getPrefab(resName);
 
         // Create the resource on the map
-        GameObject res = (GameObject) Instantiate(prefab, prefab.transform.position + new Vector3((posx + 0.5f) * 1.28f, 0, -2), prefab.transform.rotation, misc);
+        GameObject res = (GameObject) Instantiate(prefab, prefab.transform.position + new Vector3((posx + 0.5f) * 1.28f, 0, -2 - (posx % 2) / 2.0f), prefab.transform.rotation, misc);
         NetworkServer.Spawn(res);
         return res.GetComponent<NetworkIdentity>().netId;
     }
@@ -311,7 +316,6 @@ public class GameController : NetworkBehaviour
         GameObject prefab = prefabDict["enemy"].prefab;
         float rnd = Random.value;
         GameObject enemy;
-        Debug.Log("Spawning enemy at " + rnd);
         if (rnd < 0.5f)
         {
             enemy = (GameObject)Instantiate(prefab, prefab.transform.position + enemySpawnLeft.transform.position, prefab.transform.rotation);
@@ -335,8 +339,10 @@ public class GameController : NetworkBehaviour
     {
         sun.intensity = 0.6f;
         sunBack.intensity = 0.6f;
-        playerLight.intensity = 0;
-        playerLightBack.intensity = 0;
+        foreach (Light light in playerLights)
+        {
+            light.intensity = 0;
+        }
     }
 
     void changeToNight()
@@ -351,8 +357,22 @@ public class GameController : NetworkBehaviour
     {
         sun.intensity = 0;
         sunBack.intensity = 0;
-        playerLight.intensity = 3;
-        playerLightBack.intensity = 3;
+        foreach(Light light in playerLights)
+        {
+            light.intensity = 15;
+        }
+    }
+
+    [Command]
+    public void CmdAddPlayerLight(GameObject light)
+    {
+        playerLights.Add(light.GetComponent<Light>());
+    }
+
+    [ClientRpc]
+    void RpcAddPlayerLight(GameObject light)
+    {
+        playerLights.Add(light.GetComponent<Light>());
     }
 
 }
