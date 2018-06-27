@@ -25,10 +25,10 @@ public class Drop : NetworkBehaviour {
         timeAlive += Time.deltaTime;
         if (timeAlive < 1)
         {
-            transform.position = new Vector3(startpos + kx * timeAlive, Mathf.Sin(Mathf.PI * (1.0f / 6 + timeAlive * 5.0f / 6)), -2);
+            transform.position = new Vector3(startpos + kx * timeAlive, Mathf.Sin(Mathf.PI * (1.0f / 6 + timeAlive * 5.0f / 6)), -7);
         } else
         {
-            transform.position = Vector3.MoveTowards(transform.position, target.position, 0.04f * timeAlive);
+            transform.position = Vector3.MoveTowards(transform.position, new Vector3(target.position.x, target.position.y, -7), 0.04f * timeAlive);
         }
         if (isServer && Mathf.Abs(transform.position.x - target.transform.position.x) < 0.05f)
         {

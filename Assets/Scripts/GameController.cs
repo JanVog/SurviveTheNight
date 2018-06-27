@@ -36,6 +36,8 @@ public class GameController : NetworkBehaviour
     public GameObject wallTrapPrefab;
     public GameObject stonepiecePrefab;
     public GameObject woodPrefab;
+    public GameObject coalPrefab;
+
     public GameObject enemyPrefab;
 
     public Transform misc;
@@ -46,6 +48,8 @@ public class GameController : NetworkBehaviour
     public Transform enemySpawnRight;
 
     public Text woodTxt;
+    public Text stoneTxt;
+    public Text coalTxt;
 
     Dictionary<string, Text> uiDict = new Dictionary<string, Text>();
 
@@ -107,8 +111,8 @@ public class GameController : NetworkBehaviour
         prefabDict.Add("enemy", new SpawnableObject(enemyPrefab, 100));
 
         uiDict.Add("tree", woodTxt);
-        uiDict.Add("stone", woodTxt);
-        uiDict.Add("coal_stone", woodTxt);
+        uiDict.Add("stone", stoneTxt);
+        uiDict.Add("coal_stone", coalTxt);
         uiDict.Add("white_tree", woodTxt);
     }
 
@@ -238,17 +242,31 @@ public class GameController : NetworkBehaviour
     public void CmdFarmResource(int posx, NetworkInstanceId nid)
     {
         objGrid[100 + posx].hp -= 1;
-
-        //Todo: chance to get coal, etc.
+        
         GameObject prefab = null;
+        float rnd = Random.value;
         string objType = getObjAtPos(posx);
         switch (objType)
         {
             case "stone":
-                prefab = stonepiecePrefab;
+                if (rnd <= 0.05f) {
+                    prefab = coalPrefab;
+                    objType = "coal_stone";
+                } else
+                {
+                    prefab = stonepiecePrefab;
+                }
                 break;
             case "coal_stone":
-                prefab = stonepiecePrefab;
+                if (rnd <= 0.3f)
+                {
+                    prefab = coalPrefab;
+                    objType = "coal_stone";
+                }
+                else
+                {
+                    prefab = stonepiecePrefab;
+                }
                 break;
             case "tree":
                 prefab = woodPrefab;
@@ -262,10 +280,13 @@ public class GameController : NetworkBehaviour
         if (prefab != null)
         {
             // Create the resource-piece on the map
-            GameObject res = (GameObject)Instantiate(prefab, prefab.transform.position + new Vector3((posx + 0.5f) * 1.28f, 0.5f, -2), prefab.transform.rotation, misc);
+            Vector3 pos = prefab.transform.position + new Vector3((posx + 0.5f) * 1.28f, 0.5f, -7);
+            GameObject res = (GameObject)Instantiate(prefab, pos, prefab.transform.rotation, misc);
             Drop ds = res.GetComponent<Drop>();
             ds.target = player.transform;
-            ds.landingpos = res.transform.position.x + (Random.value - 0.5f) * 2;
+            float rndx = (Random.value - 0.5f) * 2;
+            ds.landingpos = res.transform.position.x + rndx + (rndx >= 0 ? 0.5f : -0.5f);
+            Debug.Log(rndx + (rndx >= 0 ? 0.5f : -0.5f) + "   " + res.transform.position.x + "   " + ds.landingpos);
             ds.gc = this;
             ds.objType = objType;
             ds.playerId = playerIds[nid];
