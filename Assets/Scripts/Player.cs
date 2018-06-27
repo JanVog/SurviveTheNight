@@ -53,8 +53,7 @@ public class Player : NetworkBehaviour
             }
             misc = GameObject.FindGameObjectWithTag("Misc").transform;
             animator = GetComponent<Animator>();
-            gc.CmdAddPlayerLight(transform.GetChild(3).gameObject);
-            gc.CmdAddPlayerLight(transform.GetChild(4).gameObject);
+            gc.CmdAddPlayerLights(GetComponent<NetworkIdentity>().netId);
         } else
         {
             Destroy(transform.GetComponentInChildren<CircleCollider2D>());

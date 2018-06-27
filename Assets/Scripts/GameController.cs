@@ -358,8 +358,8 @@ public class GameController : NetworkBehaviour
 
     void changeSceneToDay(int day)
     {
-        sun.intensity = 0.6f;
-        sunBack.intensity = 0.6f;
+        sun.intensity = 0.7f;
+        sunBack.intensity = 0.7f;
         foreach (Light light in playerLights)
         {
             light.intensity = 0;
@@ -385,15 +385,17 @@ public class GameController : NetworkBehaviour
     }
 
     [Command]
-    public void CmdAddPlayerLight(GameObject light)
+    public void CmdAddPlayerLights(NetworkInstanceId nid)
     {
-        playerLights.Add(light.GetComponent<Light>());
+        RpcAddPlayerLight(nid);
     }
 
     [ClientRpc]
-    void RpcAddPlayerLight(GameObject light)
+    void RpcAddPlayerLight(NetworkInstanceId nid)
     {
-        playerLights.Add(light.GetComponent<Light>());
+        Transform player = ClientScene.FindLocalObject(nid).transform;
+        playerLights.Add(player.GetChild(player.childCount - 1).GetComponent<Light>());
+        playerLights.Add(player.GetChild(player.childCount - 2).GetComponent<Light>());
     }
 
 }
