@@ -4,26 +4,25 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 public class Enemy : NetworkBehaviour {
-
-    int state = 0;  // 0 = moving, 1 = attacking
-    public float speed;
-    public int health;
+    
     public static List<Transform> players = new List<Transform>();
-    int dir;
+    
+    List<GameObject> objectsInRange;
+
+    protected float lastAttack = 0;
+    int health = 0;
+    protected GameObject target;
+    protected int dir;
 
     private void Start()
     {
         if (isServer)
         {
-            //Todo: repeat rate lower than 1?
+            objectsInRange = new List<GameObject>();
             InvokeRepeating("searchNearestPlayer", 0, 0.25f);
-        }
-    }
-
-    private void LateUpdate()
-    {
-        if (isServer) {
-            transform.Translate(Time.deltaTime * speed / 10 * dir, 0, 0);
+        } else
+        {
+            Destroy(gameObject.transform.GetChild(0).gameObject);
         }
     }
 
@@ -42,13 +41,33 @@ public class Enemy : NetworkBehaviour {
         dir = players[closest].position.x > transform.position.x ? 1 : -1;
     }
 
-    public void TakeDamage(int amount, int dir)
+    [Command]
+    public void CmdTakeDamage(int amount, int dir)
     {
         health -= amount;
         GetComponent<Rigidbody2D>().AddForce(new Vector2((amount/4 + 1) * dir, 0), ForceMode2D.Impulse);
         if (health <= 0)
         {
             NetworkServer.Destroy(this.gameObject);
+        }
+    }
+
+    [Command]
+    public void CmdWeaponTriggerEnter(NetworkInstanceId nid)
+    {
+        objectsInRange.Add(NetworkServer.FindLocalObject(nid));
+        objectsInRange.Sort((o1, o2) => o1.transform.position.x < o2.transform.position.x ? 1 : -1);
+        target = objectsInRange[0];
+    }
+
+    [Command]
+    public void CmdWeaponTriggerExit(NetworkInstanceId nid)
+    {
+        GameObject nexttarget = NetworkServer.FindLocalObject(nid);
+        objectsInRange.Remove(nexttarget);
+        if (nexttarget == target)
+        {
+            target = objectsInRange[0];
         }
     }
 }

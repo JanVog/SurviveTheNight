@@ -439,6 +439,7 @@ MonoBehaviour:
   pickaxeCoolDown: 1
   meleeCoolDown: 1
   meleeDamage: 0
+  rangeDamage: 0
   state: 
   enemiesInRange: []
 --- !u!114 &114465498165381532

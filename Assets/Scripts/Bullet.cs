@@ -5,16 +5,19 @@ using UnityEngine.Networking;
 
 public class Bullet : NetworkBehaviour
 {
+    public int dir;
+    public int damage;
 
     void OnCollisionEnter(Collision collision)
     {
-        var hit = collision.gameObject;
-        var health = hit.GetComponent<Player>();
-        if (health != null)
+        if (isServer)
         {
-            health.TakeDamage(10);
+            var enemy = collision.gameObject.GetComponent<Enemy>();
+            if (enemy != null)
+            {
+                enemy.CmdTakeDamage(damage, dir);
+            }
+            NetworkServer.Destroy(gameObject);
         }
-
-        Destroy(gameObject);
     }
 }

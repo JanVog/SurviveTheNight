@@ -286,7 +286,6 @@ public class GameController : NetworkBehaviour
             ds.target = player.transform;
             float rndx = (Random.value - 0.5f) * 2;
             ds.landingpos = res.transform.position.x + rndx + (rndx >= 0 ? 0.5f : -0.5f);
-            Debug.Log(rndx + (rndx >= 0 ? 0.5f : -0.5f) + "   " + res.transform.position.x + "   " + ds.landingpos);
             ds.gc = this;
             ds.objType = objType;
             ds.playerId = playerIds[nid];
@@ -344,7 +343,6 @@ public class GameController : NetworkBehaviour
         {
             enemy = (GameObject)Instantiate(prefab, prefab.transform.position + enemySpawnRight.transform.position, prefab.transform.rotation);
         }
-        enemy.GetComponent<Enemy>().health = prefabDict["enemy"].hp;
         NetworkServer.Spawn(enemy);
     }
 

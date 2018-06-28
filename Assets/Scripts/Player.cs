@@ -10,15 +10,17 @@ public class Player : NetworkBehaviour
     public GameObject bulletPrefab;
     public Transform bulletSpawn;
 
-    public const int maxHealth = 100;
+    public int maxHealth = 100;
     [SyncVar(hook = "OnChangeHealth")]
-    public int currentHealth = maxHealth;
+    public int currentHealth;
     public RectTransform healthBar;
+    public Image healthUI;
 
     public float axeCoolDown;
     public float pickaxeCoolDown;
     public float meleeCoolDown;
     public int meleeDamage;
+    public int rangeDamage;
 
     float lastActionTime = 0;
     float lastMeleeTime = 0;
@@ -49,6 +51,7 @@ public class Player : NetworkBehaviour
             }
             else
             {
+                currentHealth = maxHealth;
                 gc.addHostPlayer(GetComponent<NetworkIdentity>().netId);
             }
             misc = GameObject.FindGameObjectWithTag("Misc").transform;
@@ -105,7 +108,7 @@ public class Player : NetworkBehaviour
                 if (lastMeleeTime > meleeCoolDown)
                 {
                     lastMeleeTime = 0;
-                    CmdHitEnemies(enemiesInRange.ToArray(), dir);
+                    CmdHitEnemies(enemiesInRange.ToArray(), dir, GetComponent<NetworkIdentity>().netId);
                 }
             }
 
@@ -146,11 +149,18 @@ public class Player : NetworkBehaviour
     }
 
     [Command]
-    public void CmdHitEnemies(NetworkInstanceId[] enemiesInRange, int dir)
+    public void CmdHitEnemies(NetworkInstanceId[] enemiesInRange, int dir, NetworkInstanceId nid)
     {
         foreach(NetworkInstanceId enemyId in enemiesInRange)
         {
-            NetworkServer.FindLocalObject(enemyId).gameObject.GetComponent<Enemy>().TakeDamage(meleeDamage, dir);
+            GameObject enemy = NetworkServer.FindLocalObject(enemyId);
+            if (enemy != null)
+            {
+                enemy.GetComponent<Enemy>().CmdTakeDamage(meleeDamage, dir);
+            } else
+            {
+                NetworkServer.FindLocalObject(nid).GetComponent<Player>().enemiesInRange.Remove(enemyId);
+            }
         }
     }
 
@@ -240,6 +250,11 @@ public class Player : NetworkBehaviour
             bulletSpawn.rotation,
             misc);
 
+        //Init bullet values
+        Bullet b = bullet.GetComponent<Bullet>();
+        b.damage = rangeDamage;
+        b.dir = dir;
+
         // Add velocity to the bullet
         bullet.GetComponent<Rigidbody2D>().velocity = new Vector2(8 * dir, 0);
 
@@ -250,24 +265,26 @@ public class Player : NetworkBehaviour
         Destroy(bullet, 3.0f);
     }
 
-    public void TakeDamage(int amount)
+    [Command]
+    public void CmdTakeDamage(int amount)
     {
-        if (isServer)
+        currentHealth -= amount;
+        if (currentHealth <= 0)
         {
-            currentHealth -= amount;
-            if (currentHealth <= 0)
-            {
-                currentHealth = 0;
-                Debug.Log("Dead!");
-            }
+            currentHealth = 0;
+            Debug.Log("Dead!");
         }
     }
 
-    void OnChangeHealth(int health)
+    void OnChangeHealth(int amount)
     {
         if (!isLocalPlayer)
         {
-            healthBar.sizeDelta = new Vector2(currentHealth, healthBar.sizeDelta.y);
+            currentHealth -= amount;
+            healthBar.sizeDelta = new Vector2(maxHealth/currentHealth, healthBar.sizeDelta.y);
+        } else
+        {
+            healthUI.fillAmount = maxHealth/currentHealth;
         }
     }
 }
