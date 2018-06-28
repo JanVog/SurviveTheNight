@@ -43,6 +43,7 @@ public class Player : NetworkBehaviour
     {
         if (isLocalPlayer)
         {
+            healthUI = GameObject.FindGameObjectWithTag("healthui").GetComponent<Image>();
             enemiesInRange = new List<NetworkInstanceId>();
             gc = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameController>();
             if (!isServer)
@@ -264,9 +265,8 @@ public class Player : NetworkBehaviour
         // Destroy the bullet after 2 seconds
         Destroy(bullet, 3.0f);
     }
-
-    [Command]
-    public void CmdTakeDamage(int amount)
+    
+    public void TakeDamage(int amount)
     {
         currentHealth -= amount;
         if (currentHealth <= 0)

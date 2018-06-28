@@ -11,6 +11,7 @@ TagManager:
   - coal
   - wood
   - Building
+  - healthui
   layers:
   - Default
   - TransparentFX

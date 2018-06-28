@@ -3,17 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class Enemy : NetworkBehaviour {
+public abstract class Enemy : NetworkBehaviour {
     
     public static List<Transform> players = new List<Transform>();
     
     List<GameObject> objectsInRange;
-
-    protected float lastAttack = 0;
+    
     int health = 0;
     protected GameObject target;
     protected int dir;
-
+        
     private void Start()
     {
         if (isServer)
@@ -25,6 +24,8 @@ public class Enemy : NetworkBehaviour {
             Destroy(gameObject.transform.GetChild(0).gameObject);
         }
     }
+
+    protected abstract void Attack();
 
     void searchNearestPlayer()
     {
@@ -57,7 +58,14 @@ public class Enemy : NetworkBehaviour {
     {
         objectsInRange.Add(NetworkServer.FindLocalObject(nid));
         objectsInRange.Sort((o1, o2) => o1.transform.position.x < o2.transform.position.x ? 1 : -1);
-        target = objectsInRange[0];
+        if (target == null)
+        {
+            target = objectsInRange[0];
+            Invoke("Attack", 0);
+        } else
+        {
+            target = objectsInRange[0];
+        }
     }
 
     [Command]
@@ -67,7 +75,13 @@ public class Enemy : NetworkBehaviour {
         objectsInRange.Remove(nexttarget);
         if (nexttarget == target)
         {
-            target = objectsInRange[0];
+            if (objectsInRange.Count == 0)
+            {
+                CancelInvoke("Attack");
+            } else
+            {
+                target = objectsInRange[0];
+            }
         }
     }
 }

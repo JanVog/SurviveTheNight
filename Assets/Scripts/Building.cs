@@ -15,8 +15,8 @@ public class Building : NetworkBehaviour {
     {
         health = maxhealth;
     }
-    [Command]
-	public void CmdTakeDamage(int amount)
+
+	public void TakeDamage(int amount)
     {
         health -= amount;
         
