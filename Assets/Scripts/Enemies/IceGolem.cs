@@ -9,6 +9,11 @@ public class IceGolem : Enemy {
     public int damage;
     public float attackRate;
 
+    private void Start()
+    {
+        health = maxhealth;
+    }
+
     private void LateUpdate()
     {
         if (isServer)

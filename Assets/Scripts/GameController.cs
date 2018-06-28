@@ -54,6 +54,7 @@ public class GameController : NetworkBehaviour
     Dictionary<string, Text> uiDict = new Dictionary<string, Text>();
 
     Dictionary<string, SpawnableObject> prefabDict = new Dictionary<string, SpawnableObject>();
+    int enemyCount = 0;
 
     List<Dictionary<string, int>> resourceListPlayers;
     List<NetworkConnection> connectionList;
@@ -333,15 +334,16 @@ public class GameController : NetworkBehaviour
 
     void SpawnEnemy()
     {
+        enemyCount++;
         GameObject prefab = prefabDict["enemy"].prefab;
         float rnd = Random.value;
         GameObject enemy;
         if (rnd < 0.5f)
         {
-            enemy = (GameObject)Instantiate(prefab, prefab.transform.position + enemySpawnLeft.transform.position, prefab.transform.rotation);
+            enemy = (GameObject)Instantiate(prefab, prefab.transform.position + enemySpawnLeft.transform.position - new Vector3(0, 0, 0.01f * enemyCount), prefab.transform.rotation);
         } else
         {
-            enemy = (GameObject)Instantiate(prefab, prefab.transform.position + enemySpawnRight.transform.position, prefab.transform.rotation);
+            enemy = (GameObject)Instantiate(prefab, prefab.transform.position + enemySpawnRight.transform.position - new Vector3(0, 0, 0.01f * enemyCount), prefab.transform.rotation);
         }
         NetworkServer.Spawn(enemy);
     }

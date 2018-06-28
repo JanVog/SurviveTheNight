@@ -9,7 +9,7 @@ public abstract class Enemy : NetworkBehaviour {
     
     List<GameObject> objectsInRange;
     
-    int health = 0;
+    protected int health = 0;
     protected GameObject target;
     protected int dir;
         
@@ -55,7 +55,7 @@ public abstract class Enemy : NetworkBehaviour {
 
     [Command]
     public void CmdWeaponTriggerEnter(NetworkInstanceId nid)
-    {
+    {   
         objectsInRange.Add(NetworkServer.FindLocalObject(nid));
         objectsInRange.Sort((o1, o2) => o1.transform.position.x < o2.transform.position.x ? 1 : -1);
         if (target == null)
@@ -66,6 +66,7 @@ public abstract class Enemy : NetworkBehaviour {
         {
             target = objectsInRange[0];
         }
+        Debug.Log(NetworkServer.FindLocalObject(nid).name + "   " +  objectsInRange.Count);
     }
 
     [Command]
@@ -78,6 +79,7 @@ public abstract class Enemy : NetworkBehaviour {
             if (objectsInRange.Count == 0)
             {
                 CancelInvoke("Attack");
+                target = null;
             } else
             {
                 target = objectsInRange[0];

@@ -152,6 +152,7 @@ public class Player : NetworkBehaviour
     [Command]
     public void CmdHitEnemies(NetworkInstanceId[] enemiesInRange, int dir, NetworkInstanceId nid)
     {
+        Debug.Log("hit");
         foreach(NetworkInstanceId enemyId in enemiesInRange)
         {
             GameObject enemy = NetworkServer.FindLocalObject(enemyId);
@@ -278,13 +279,27 @@ public class Player : NetworkBehaviour
 
     void OnChangeHealth(int amount)
     {
+        if(!isServer)
+            currentHealth -= amount;
         if (!isLocalPlayer)
         {
-            currentHealth -= amount;
-            healthBar.sizeDelta = new Vector2(maxHealth/currentHealth, healthBar.sizeDelta.y);
-        } else
-        {
-            healthUI.fillAmount = maxHealth/currentHealth;
+            if (currentHealth > 0)
+            {
+                healthBar.sizeDelta = new Vector2(maxHealth *1.0f / currentHealth, healthBar.sizeDelta.y);
+            } else
+            {
+                healthBar.sizeDelta = new Vector2(0, healthBar.sizeDelta.y);
+            }
         }
-    }
+        else
+        {
+            if (currentHealth > 0)
+            {
+                healthUI.fillAmount = maxHealth * 1.0f / currentHealth;
+            } else
+            {
+                healthUI.fillAmount = 0;
+            }
+        }
+}
 }

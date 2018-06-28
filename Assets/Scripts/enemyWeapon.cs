@@ -5,7 +5,12 @@ using UnityEngine.Networking;
 
 public class enemyWeapon : NetworkBehaviour {
 
-    public Enemy enemy;
+    Enemy enemy;
+
+    private void Start()
+    {
+        enemy = transform.parent.GetComponent<Enemy>();
+    }
 
     public void OnTriggerEnter2D(Collider2D other)
     {
