@@ -30,7 +30,7 @@ public class Drop : NetworkBehaviour {
         {
             transform.position = Vector3.MoveTowards(transform.position, new Vector3(target.position.x, target.position.y, -7), 0.04f * timeAlive);
         }
-        if (isServer && Mathf.Abs(transform.position.x - target.transform.position.x) < 0.05f)
+        if (timeAlive > 1 && isServer && Mathf.Abs(transform.position.x - target.transform.position.x) < 0.05f)
         {
             NetworkServer.Destroy(gameObject);
             gc.CmdPickDrop(this.objType, this.playerId);

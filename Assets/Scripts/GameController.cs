@@ -107,12 +107,12 @@ public class GameController : NetworkBehaviour
 
     void initPrefabs()
     {
-        prefabDict.Add("stone", new SpawnableObject(stonePrefab, 15));
-        prefabDict.Add("coal_stone", new SpawnableObject(coalStonePrefab, 15));
-        prefabDict.Add("tree", new SpawnableObject(treePrefab, 15));
-        prefabDict.Add("white_tree", new SpawnableObject(whiteTreePrefab, 15));
-        prefabDict.Add("wall_trap", new SpawnableObject(wallTrapPrefab, 15));
-        prefabDict.Add("enemy", new SpawnableObject(enemyPrefab, 100));
+        prefabDict.Add("stone", new SpawnableObject(stonePrefab, 10));
+        prefabDict.Add("coal_stone", new SpawnableObject(coalStonePrefab, 8));
+        prefabDict.Add("tree", new SpawnableObject(treePrefab, 10));
+        prefabDict.Add("white_tree", new SpawnableObject(whiteTreePrefab, 8));
+        prefabDict.Add("wall_trap", new SpawnableObject(wallTrapPrefab, 50));
+        prefabDict.Add("enemy", new SpawnableObject(enemyPrefab, 30));
 
         uiDict.Add("tree", woodTxt);
         uiDict.Add("stone", stoneTxt);
@@ -145,6 +145,7 @@ public class GameController : NetworkBehaviour
 
     void refillWorld()
     {
+        //ToDo: Fix refilling
         if (isServer)
         {
             for (int i = 0; i < 20; i++)
@@ -156,7 +157,7 @@ public class GameController : NetworkBehaviour
                     int objIndex = 100 + objGridOpen[i][grid_index];
                     string objName = getObjName(resNo);
                     objGrid[objIndex].name = objName;
-                    objGrid[objIndex].hp = prefabDict[objName].hp;
+                    objGrid[objIndex].hp = prefabDict[objName].hp + Random.Range(-2, 2);
                     objGridClosed[i].Add(objGridOpen[i][grid_index]);
                     objGrid[objIndex].nid = SpawnResource(objGridOpen[i][grid_index], objName);
                     objGridOpen[i].RemoveAt(grid_index);
@@ -288,8 +289,9 @@ public class GameController : NetworkBehaviour
             GameObject res = (GameObject)Instantiate(prefab, pos, prefab.transform.rotation, misc);
             Drop ds = res.GetComponent<Drop>();
             ds.target = player.transform;
-            float rndx = (Random.value - 0.5f) * 2;
-            ds.landingpos = res.transform.position.x + rndx + (rndx >= 0 ? 0.5f : -0.5f);
+            float rndx = (Random.value - 0.5f) * 5 / 2f;
+            rndx += rndx >= 0 ? 0.5f : -0.5f;
+            ds.landingpos = res.transform.position.x + rndx;
             ds.gc = this;
             ds.objType = objType;
             ds.playerId = playerIds[nid];
@@ -300,6 +302,8 @@ public class GameController : NetworkBehaviour
         {
             objGrid[100 + posx].hp = 0;
             objGrid[100 + posx].name = null;
+            objGridClosed[(100 + posx) / 10].Remove(posx);
+            objGridOpen[(100 + posx) / 10].Add(posx);
             NetworkServer.Destroy(NetworkServer.FindLocalObject(objGrid[100 + posx].nid));
             TargetChangeState(player.GetComponent<NetworkIdentity>().connectionToClient);
         }
@@ -383,7 +387,7 @@ public class GameController : NetworkBehaviour
 
     void changeToNight()
     {
-        InvokeRepeating("SpawnEnemy", 0, 5 - 4 * day);
+        InvokeRepeating("SpawnEnemy", 0, 1 + (Mathf.Pow(2, 1.0f/day) - 1 ) * 4);
         RpcChangeToNight();
         Invoke("changeToDay", 60 - dayLength);
     }
