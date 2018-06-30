@@ -365,7 +365,7 @@ public class GameController : NetworkBehaviour
 
     void changeToDay()
     {
-        CancelInvoke("SpawnEnemies");
+        CancelInvoke("SpawnEnemy");
         day += 1;
         dayLength = Random.Range(25, 35);
         Invoke("changeToNight", dayLength);
