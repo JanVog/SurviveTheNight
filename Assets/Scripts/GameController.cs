@@ -44,8 +44,6 @@ public class GameController : NetworkBehaviour
     public Light sun;
     public Light sunBack;
     public List<Light> playerLights;
-    public Transform enemySpawnLeft;
-    public Transform enemySpawnRight;
 
     public Text woodTxt;
     public Text stoneTxt;
@@ -59,6 +57,7 @@ public class GameController : NetworkBehaviour
     List<Dictionary<string, int>> resourceListPlayers;
     List<NetworkConnection> connectionList;
     Dictionary<NetworkInstanceId, int> playerIds;
+    List<GameObject> playerGos;
 
     //Todo check if value changes although theres a hook
     [SyncVar(hook="changeSceneToDay")]
@@ -75,6 +74,7 @@ public class GameController : NetworkBehaviour
         if (isServer)
         {
             objGrid = new List<GridObject>();
+            playerGos = new List<GameObject>();
             initPrefabs();
             initMap();
             playerIds = new Dictionary<NetworkInstanceId, int>();
@@ -92,14 +92,17 @@ public class GameController : NetworkBehaviour
     {
         connectionList.Add(null);
         playerIds.Add(nid, 0);
+        playerGos.Add(NetworkServer.FindLocalObject(nid));
     }
 
     [Command]
     public void CmdPlayerConnected(NetworkInstanceId nid)
     {
+        GameObject tmpplayer = NetworkServer.FindLocalObject(nid);
         playerIds.Add(nid, connectionList.Count);
         resourceListPlayers.Add(new Dictionary<string, int>() { { "stone", 0 }, { "tree", 0 }, { "coal_stone", 0 }, {"white_tree", 0} });
-        connectionList.Add(NetworkServer.FindLocalObject(nid).gameObject.GetComponent<NetworkIdentity>().connectionToClient);
+        connectionList.Add(tmpplayer.GetComponent<NetworkIdentity>().connectionToClient);
+        playerGos.Add(tmpplayer);
     }
 
     void initPrefabs()
@@ -340,10 +343,22 @@ public class GameController : NetworkBehaviour
         GameObject enemy;
         if (rnd < 0.5f)
         {
-            enemy = (GameObject)Instantiate(prefab, prefab.transform.position + enemySpawnLeft.transform.position - new Vector3(0, 0, 0.01f * enemyCount), prefab.transform.rotation);
+            float minx = 0;
+            foreach(GameObject p in playerGos)
+            {
+                if (p.transform.position.x < minx)
+                    minx = p.transform.position.x;
+            }
+            enemy = (GameObject)Instantiate(prefab, prefab.transform.position - new Vector3(-minx + 25, 0, 0.01f * enemyCount), prefab.transform.rotation);
         } else
         {
-            enemy = (GameObject)Instantiate(prefab, prefab.transform.position + enemySpawnRight.transform.position - new Vector3(0, 0, 0.01f * enemyCount), prefab.transform.rotation);
+            float maxx = 0;
+            foreach (GameObject p in playerGos)
+            {
+                if (p.transform.position.x > maxx)
+                    maxx = p.transform.position.x;
+            }
+            enemy = (GameObject)Instantiate(prefab, prefab.transform.position - new Vector3(-maxx - 25, 0, 0.01f * enemyCount), prefab.transform.rotation);
         }
         NetworkServer.Spawn(enemy);
     }

@@ -12,8 +12,20 @@ public abstract class Enemy : NetworkBehaviour {
     protected int health = 0;
     protected GameObject target;
     protected int dir;
-        
-    private void Start()
+    public int speed;
+    public int maxhealth;
+    public int damage;
+    public float attackRate;
+
+    private void LateUpdate()
+    {
+        if (isServer)
+        {
+            transform.Translate(Time.deltaTime * speed / 10.0f * dir, 0, 0);
+        }
+    }
+
+    public void Start()
     {
         if (isServer)
         {
@@ -21,36 +33,55 @@ public abstract class Enemy : NetworkBehaviour {
             InvokeRepeating("searchNearestPlayer", 0, 0.25f);
         } else
         {
+            //ToDo: check if it really happens
             Destroy(gameObject.transform.GetChild(0).gameObject);
         }
     }
 
-    protected abstract void Attack();
+    protected void Attack()
+    {
+        if (target != null)
+        {
+            if (target.tag == "Player")
+            {
+                target.GetComponent<Player>().TakeDamage(damage);
+            }
+            else
+            {
+                target.GetComponent<Building>().TakeDamage(damage);
+            }
+            Invoke("Attack", attackRate);
+        }
+    }
 
     void searchNearestPlayer()
     {
-        int closest = 0;
-        float diff = Mathf.Abs(transform.position.x - players[0].position.x);
-        for(int i = 1; i < players.Count; i++)
+        if (target == null)
         {
-            if (Mathf.Abs(transform.position.x -players[i].position.x) < diff)
+            int closest = 0;
+            float diff = Mathf.Abs(transform.position.x - players[0].position.x);
+            for (int i = 1; i < players.Count; i++)
             {
-                diff = Mathf.Abs(transform.position.x - players[i].position.x);
-                closest = i;
+                if (Mathf.Abs(transform.position.x - players[i].position.x) < diff)
+                {
+                    diff = Mathf.Abs(transform.position.x - players[i].position.x);
+                    closest = i;
+                }
             }
+            dir = players[closest].position.x > transform.position.x ? 1 : -1;
         }
-        dir = players[closest].position.x > transform.position.x ? 1 : -1;
     }
 
     [Command]
     public void CmdTakeDamage(int amount, int dir)
     {
         health -= amount;
-        GetComponent<Rigidbody2D>().AddForce(new Vector2((amount/4 + 1) * dir, 0), ForceMode2D.Impulse);
         if (health <= 0)
         {
-            NetworkServer.Destroy(this.gameObject);
+            Destroy(transform.GetChild(0).gameObject);
+            NetworkServer.Destroy(gameObject);
         }
+        GetComponent<Rigidbody2D>().AddForce(new Vector2((amount / 4.0f + 1) * dir * 1.3f, 0), ForceMode2D.Impulse);
     }
 
     [Command]
@@ -60,13 +91,15 @@ public abstract class Enemy : NetworkBehaviour {
         objectsInRange.Sort((o1, o2) => o1.transform.position.x < o2.transform.position.x ? 1 : -1);
         if (target == null)
         {
+            dir = 0;
+            GetComponent<Rigidbody2D>().velocity = Vector3.zero;
+            GetComponent<Rigidbody2D>().angularVelocity = 0;
             target = objectsInRange[0];
             Invoke("Attack", 0);
         } else
         {
             target = objectsInRange[0];
         }
-        Debug.Log(NetworkServer.FindLocalObject(nid).name + "   " +  objectsInRange.Count);
     }
 
     [Command]
@@ -80,6 +113,7 @@ public abstract class Enemy : NetworkBehaviour {
             {
                 CancelInvoke("Attack");
                 target = null;
+                searchNearestPlayer();
             } else
             {
                 target = objectsInRange[0];

@@ -14,7 +14,7 @@ public class Player : NetworkBehaviour
     [SyncVar(hook = "OnChangeHealth")]
     public int currentHealth;
     public RectTransform healthBar;
-    public Image healthUI;
+    Image healthUI;
 
     public float axeCoolDown;
     public float pickaxeCoolDown;
@@ -152,7 +152,6 @@ public class Player : NetworkBehaviour
     [Command]
     public void CmdHitEnemies(NetworkInstanceId[] enemiesInRange, int dir, NetworkInstanceId nid)
     {
-        Debug.Log("hit");
         foreach(NetworkInstanceId enemyId in enemiesInRange)
         {
             GameObject enemy = NetworkServer.FindLocalObject(enemyId);
@@ -285,7 +284,7 @@ public class Player : NetworkBehaviour
         {
             if (currentHealth > 0)
             {
-                healthBar.sizeDelta = new Vector2(maxHealth *1.0f / currentHealth, healthBar.sizeDelta.y);
+                healthBar.sizeDelta = new Vector2(currentHealth * 1.0f / maxHealth, healthBar.sizeDelta.y);
             } else
             {
                 healthBar.sizeDelta = new Vector2(0, healthBar.sizeDelta.y);
@@ -295,7 +294,7 @@ public class Player : NetworkBehaviour
         {
             if (currentHealth > 0)
             {
-                healthUI.fillAmount = maxHealth * 1.0f / currentHealth;
+                healthUI.fillAmount = currentHealth / (maxHealth * 1.0f);
             } else
             {
                 healthUI.fillAmount = 0;

@@ -433,13 +433,15 @@ MonoBehaviour:
   bulletPrefab: {fileID: 1904026664242826, guid: 2406a53b6a5755246b5dd31397f85721,
     type: 2}
   bulletSpawn: {fileID: 4279678598355482}
+  maxHealth: 100
   currentHealth: 100
   healthBar: {fileID: 224881785703408466}
+  healthUI: {fileID: 0}
   axeCoolDown: 1
   pickaxeCoolDown: 1
   meleeCoolDown: 1
-  meleeDamage: 0
-  rangeDamage: 0
+  meleeDamage: 10
+  rangeDamage: 5
   state: 
   enemiesInRange: []
 --- !u!114 &114465498165381532
